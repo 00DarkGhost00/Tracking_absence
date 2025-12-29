@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="max-width: 600px;">
+    <div class="card shadow-sm mt-4">
+        <div class="card-body p-4">
+            <h3 class="mb-4 text-navy"><i class="fas fa-calendar-plus me-2"></i>Ajouter un Rattrapage</h3>
+            <form method="POST" action="{{ url_for('process_ratt') }}">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Professeur</label>
+                    <select class="form-select" name="professeur" required>
+                        <option value="">Sélectionnez un professeur...</option>
+                        {% for p in professors %}
+                        <option value="{{ p.Professeur }}">{{ p.Professeur }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Date de la séance</label>
+                    <input type="date" class="form-control" name="date" value="{{ today }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Créneau Horaire</label>
+                    <select class="form-select" name="time_slot" required>
+                        {% for slot in time_slots %}
+                        <option value="{{ slot }}">{{ slot }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-success btn-lg">Valider le Rattrapage</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

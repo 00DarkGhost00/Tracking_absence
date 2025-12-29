@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Enregistrement des Absences</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .form-container { max-width: 700px; margin: 20px auto; padding: 30px; border: 1px solid #ddd; border-radius: 8px; background-color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        label { display: block; margin-top: 15px; font-weight: bold; color: #555; }
+        input[type="date"], select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .room-list { max-height: 250px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; margin-top: 5px; background-color: #fafafa; border-radius: 4px; }
+        .room-list label { font-weight: normal; display: inline-block; margin-right: 20px; margin-bottom: 5px; }
+        .room-list input[type="checkbox"] { margin-right: 5px; }
+        button[type="submit"] {
+            margin-top: 30px; 
+            width: 100%; 
+            padding: 12px 20px; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button[type="submit"]:hover { background-color: #0056b3; }
+        .nav-link { text-align: center; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h1>Entrée des Données d'Absence Quotidiennes 📝</h1>
+        
+        <form method="POST" action="{{ url_for('process_absence') }}">
+            
+            <label for="date">1. Date du Jour:</label>
+            <input type="date" id="date" name="date" value="{{ today }}" required>
+
+            <label for="time_slot">2. Créneau Horaire (Chrono):</label>
+            <select id="time_slot" name="time_slot" required>
+                {% for slot in time_slots %}
+                    <option value="{{ slot }}">{{ slot }}</option>
+                {% endfor %}
+            </select>
+
+            <label>3. Salles Vides Signalées (Sélectionnez toutes les salles où il n'y a pas de cours):</label>
+            <div class="room-list">
+                {% for room in rooms %}
+                    <label>
+                        <input type="checkbox" name="empty_rooms" value="{{ room }}">
+                        {{ room }}
+                    </label>
+                {% endfor %}
+            </div>
+            
+            <button type="submit">
+                Processer et Enregistrer les Absences
+            </button>
+        </form>
+        <div class="nav-link">
+            <a href="{{ url_for('dashboard') }}">Accéder au Tableau de Bord des Statistiques</a>
+        </div>
+    </div>
+</body>
+</html>

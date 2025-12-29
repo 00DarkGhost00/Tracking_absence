@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-4">⚙️ Paramètres du Système</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card p-4 mb-4">
+            <h5>📅 Période du Semestre</h5>
+            <form method="POST">
+                <div class="mb-3">
+                    <label>Date de début</label>
+                    <input type="date" name="sem_start" class="form-control" value="{{ s }}" required>
+                </div>
+                <div class="mb-3">
+                    <label>Date de fin</label>
+                    <input type="date" name="sem_end" class="form-control" value="{{ e }}" required>
+                </div>
+                <button type="submit" class="btn btn-secondary w-100">Enregistrer les Dates</button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h5>📄 Importer l'Emploi du Temps</h5>
+            <form method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label>Nouveau fichier Database.csv</label>
+                    <input type="file" name="file" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-outline-primary w-100">Mettre à Jour la Base</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card border-primary shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-database me-2"></i>Sauvegarde et Restauration</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 border-end">
+                <h6>1. Sauvegarder</h6>
+                <p class="small text-muted">Téléchargez une copie complète de la base de données actuelle (incluant absences, rattrapages et emploi du temps).</p>
+                <a href="{{ url_for('export_db') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-download me-2"></i>Télécharger le Backup (.db)
+                </a>
+            </div>
+            
+            <div class="col-md-6">
+                <h6>2. Restaurer</h6>
+                <p class="small text-muted">Remplacez toutes les données actuelles par un fichier de sauvegarde précédent.</p>
+                <form action="{{ url_for('restore_db') }}" method="POST" enctype="multipart/form-data" onsubmit="return confirm('Attention: Cela écrasera TOUTES les données actuelles. Continuer ?');">
+                    <div class="input-group input-group-sm mb-2">
+                        <input type="file" name="backup_file" class="form-control" accept=".db" required>
+                        <button class="btn btn-warning" type="submit">Restaurer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr class="my-5">
+
+<div class="card border-danger shadow-sm mb-5">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Zone de Danger - Nouvelle Semestre</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">
+            Utilisez ce bouton uniquement à la fin de l'année ou du semestre. Cela effacera l'emploi du temps actuel, 
+            toutes les absences enregistrées et tous les rattrapages.
+        </p>
+        <div class="alert alert-warning">
+            <strong>Conseil :</strong> Assurez-vous d'avoir imprimé ou sauvegardé vos rapports PDF avant de continuer.
+        </div>
+        
+        <form action="{{ url_for('reset_semester') }}" method="POST" onsubmit="return confirm('Êtes-vous ABSOLUMENT sûr ? Cette action est irréversible et supprimera toutes les données du semestre actuel.');">
+            <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash-alt me-2"></i>Réinitialiser l'application pour le nouveau semestre
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

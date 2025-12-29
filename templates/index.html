@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <h2 class="card-title mb-4">📝 Saisie des Absences Quotidiennes</h2>
+            <p class="text-muted">Sélectionnez la date, le créneau, et cochez les salles qui sont restées <strong>vides</strong>.</p>
+            <hr>
+            
+            <form method="POST" action="{{ url_for('process_absence') }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">1. Date du Jour</label>
+                        <input type="date" class="form-control" name="date" value="{{ today }}" required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">2. Créneau Horaire</label>
+                        <select class="form-select" name="time_slot" required>
+                            {% for slot in time_slots %}
+                                <option value="{{ slot }}">{{ slot }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">3. Salles Vides Signalées</label>
+                    <div class="border rounded p-3 bg-light" style="max-height: 300px; overflow-y: auto;">
+                        <div class="row">
+                            {% for room in rooms %}
+                            <div class="col-sm-4 col-md-3 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="empty_rooms" value="{{ room }}" id="check_{{ loop.index }}">
+                                    <label class="form-check-label" for="check_{{ loop.index }}">
+                                        {{ room }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg">Enregistrer les Absences</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

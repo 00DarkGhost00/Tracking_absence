@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Recherche & Gestion</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .container { max-width: 900px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { color: #007bff; }
+        .search-form input[type="text"] { width: 70%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .search-form button { padding: 8px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 0.9em; }
+        th { background-color: #e9ecef; }
+        .delete-btn { background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Recherche et Gestion du Planning</h1>
+        <p><a href="{{ url_for('index') }}">← Retour à l'accueil</a></p>
+
+        <form class="search-form" method="POST" action="{{ url_for('search_schedule') }}">
+            <input type="text" name="query_term" placeholder="Chercher par Professeur, Salle ou Filière..." value="{{ query_term if query_term }}" required>
+            <button type="submit">Rechercher</button>
+        </form>
+
+        {% if results %}
+            
+            <h2>Absences Enregistrées (Historique)</h2>
+            {% if results.absences %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>Date</th><th>Professeur</th><th>Filière</th><th>Groupe</th><th>Créneau</th><th>Salle</th><th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in results.absences %}
+                            <tr>
+                                <td>{{ entry.id }}</td>
+                                <td>{{ entry.date_absent }}</td>
+                                <td>{{ entry.Professeur }}</td>
+                                <td>{{ entry.Filiere }}</td>
+                                <td>{{ entry.Groupe }}</td>
+                                <td>{{ entry.Lheure }}</td>
+                                <td>{{ entry.Salle }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('delete_absence', entry_id=entry.id) }}" style="display:inline;">
+                                        <button class="delete-btn" type="submit" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette absence enregistrée (ID: {{ entry.id }})?');">Supprimer</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>Aucune absence enregistrée trouvée pour "{{ query_term }}".</p>
+            {% endif %}
+
+            <h2 style="margin-top: 40px;">Planning Principal (Master Schedule)</h2>
+            {% if results.schedule %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Professeur</th><th>Filière</th><th>Groupe</th><th>Jour</th><th>Créneau</th><th>Salle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in results.schedule %}
+                            <tr>
+                                <td>{{ entry.Professeur }}</td>
+                                <td>{{ entry.Filiere }}</td>
+                                <td>{{ entry.Groupe }}</td>
+                                <td>{{ entry.Jour }}</td>
+                                <td>{{ entry.Lheure }}</td>
+                                <td>{{ entry.Salle }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>Aucune entrée de planning principal trouvée pour "{{ query_term }}".</p>
+            {% endif %}
+
+        {% endif %}
+    </div>
+</body>
+</html>

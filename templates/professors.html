@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-navy"><i class="fas fa-users me-2"></i>Statistiques des Professeurs</h2>
+        <div class="input-group w-25 shadow-sm">
+            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+            <input type="text" id="pSearch" class="form-control border-start-0" placeholder="Rechercher un professeur...">
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="pGrid">
+        {% for p in data %}
+        <div class="col prof-card">
+            <div class="card h-100 shadow-sm border-0 transition-hover">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-light p-3 me-3">
+                            <i class="fas fa-chalkboard-teacher fa-lg text-navy"></i>
+                        </div>
+                        <h5 class="card-title mb-0 text-navy fw-bold">{{ p.name }}</h5>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="p-2 border rounded bg-light text-center">
+                                <small class="text-muted d-block">Prévu</small>
+                                <span class="fw-bold">{{ p.theo }}h</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 border rounded bg-light text-center">
+                                <small class="text-muted d-block text-danger">Absences</small>
+                                <span class="fw-bold text-danger">-{{ p.abs }}h</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 border rounded bg-light text-center">
+                                <small class="text-muted d-block text-primary">Rattrapage</small>
+                                <span class="fw-bold text-primary">+{{ p.ratt }}h</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 border rounded bg-light text-center">
+                                <small class="text-muted d-block text-success">Réalisé</small>
+                                <span class="fw-bold text-success">{{ p.real }}h</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% set perc = (p.real / p.theo * 100) if p.theo > 0 else 0 %}
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Progression</small>
+                        <small class="fw-bold">{{ perc|round|int }}%</small>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar {% if perc < 50 %}bg-danger{% elif perc < 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                             role="progressbar" style="width: {{ perc }}%"></div>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent border-0 pb-3">
+                    <a href="{{ url_for('professor_details', prof_name=p.name) }}" class="btn btn-outline-navy btn-sm w-100">
+                        <i class="fas fa-file-invoice me-1"></i> Voir les détails
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .text-navy { color: #002147; }
+    .btn-outline-navy { color: #002147; border-color: #002147; }
+    .btn-outline-navy:hover { background-color: #002147; color: white; }
+    
+    .transition-hover {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .transition-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+</style>
+
+<script>
+    document.getElementById('pSearch').onkeyup = function() {
+        let val = this.value.toUpperCase();
+        let cards = document.querySelectorAll(".prof-card");
+        
+        cards.forEach(card => {
+            let name = card.querySelector(".card-title").textContent.toUpperCase();
+            if (name.includes(val)) {
+                card.style.display = "";
+            } else {
+                card.style.display = "none";
+            }
+        });
+    }
+</script>
+{% endblock %}
