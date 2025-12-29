@@ -171,8 +171,9 @@ def ratt_session():
 @app.route('/process_ratt', methods=['POST'])
 def process_ratt():
     db = get_db()
+    # Updated to match your HTML 'name' attributes: 'professeur' and 'time_slot'
     db.execute("INSERT INTO RattSessions (date_ratt, Professeur, Lheure) VALUES (?,?,?)", 
-               (request.form['date'], request.form['prof'], request.form['slot']))
+               (request.form['date'], request.form['professeur'], request.form['time_slot']))
     db.commit()
     return redirect(url_for('professors_list'))
 
