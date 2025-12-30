@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-history me-2 text-success"></i>Liste des Rattrapages</h2>
+        <div class="d-flex gap-2">
+            <div class="input-group shadow-sm" style="width: 300px;">
+                <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" id="rattSearch" class="form-control" placeholder="Rechercher (Nom ou Date)...">
+            </div>
+            <a href="{{ url_for('ratt_session') }}" class="btn btn-success shadow-sm">
+                <i class="fas fa-plus me-2"></i>Nouveau
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0" id="rattTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Professeur</th>
+                        <th>Créneau</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rattrapages %}
+                    <tr class="ratt-row">
+                        <td>{{ r.date_ratt }}</td>
+                        <td><strong>{{ r.Professeur }}</strong></td>
+                        <td><span class="badge bg-info text-dark">{{ r.Lheure }}</span></td>
+                        <td class="text-center">
+                            <form action="{{ url_for('delete_ratt', ratt_id=r.id) }}" method="POST" 
+                                  onsubmit="return confirm('Supprimer ce rattrapage ?');" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash-alt"></i> Supprimer
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">Aucun rattrapage enregistré.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('rattSearch').addEventListener('keyup', function() {
+        let filter = this.value.toUpperCase();
+        let rows = document.querySelectorAll('.ratt-row');
+
+        rows.forEach(row => {
+            // Get the text from the Date column and the Professor column
+            let dateText = row.cells[0].textContent.toUpperCase();
+            let profText = row.cells[1].textContent.toUpperCase();
+            
+            if (dateText.includes(filter) || profText.includes(filter)) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    });
+</script>
+
+<style>
+    /* Styling for a cleaner professional look */
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 33, 71, 0.03);
+    }
+    .badge {
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
+</style>
+{% endblock %}

@@ -4,15 +4,22 @@
     <div class="card shadow-sm mt-4">
         <div class="card-body p-4">
             <h3 class="mb-4 text-navy"><i class="fas fa-calendar-plus me-2"></i>Ajouter un Rattrapage</h3>
+            
             <form method="POST" action="{{ url_for('process_ratt') }}">
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Professeur</label>
-                    <select class="form-select" name="professeur" required>
-                        <option value="">Sélectionnez un professeur...</option>
+                    <label class="form-label fw-bold">Rechercher / Sélectionner Professeur</label>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="profSearch" class="form-control" placeholder="Tapez le nom du professeur...">
+                    </div>
+                    
+                    <select class="form-select" id="profSelect" name="professeur" required size="5">
+                        <option value="" selected disabled>Sélectionnez un professeur...</option>
                         {% for p in professors %}
                         <option value="{{ p.Professeur }}">{{ p.Professeur }}</option>
                         {% endfor %}
                     </select>
+                    <small class="text-muted">Le menu se filtre automatiquement pendant la saisie.</small>
                 </div>
                 
                 <div class="mb-3">
@@ -36,4 +43,32 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.getElementById('profSearch').addEventListener('keyup', function() {
+        let filter = this.value.toUpperCase();
+        let select = document.getElementById('profSelect');
+        let options = select.getElementsByTagName('option');
+
+        for (let i = 0; i < options.length; i++) {
+            // Skip the first placeholder option
+            if (options[i].disabled) continue;
+            
+            let txtValue = options[i].textContent || options[i].innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                options[i].style.display = "";
+            } else {
+                options[i].style.display = "none";
+            }
+        }
+    });
+</script>
+
+<style>
+    .text-navy { color: #002147; }
+    /* Makes the select look better when it has a 'size' attribute */
+    #profSelect {
+        overflow-y: auto;
+    }
+</style>
 {% endblock %}

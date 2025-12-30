@@ -76,7 +76,7 @@
         }
 
         .sidebar a.active { 
-            background: rgba(255,255,255,0.1); 
+            background: rgba(72, 12, 151, 0.473); 
             color: white; 
             border-left: 5px solid var(--gold);
             font-weight: bold;
@@ -117,10 +117,18 @@
             </a>
             <a href="{{ url_for('ratt_session') }}" class="{{ 'active' if request.endpoint == 'ratt_session' }}">
                 <i class="fas fa-plus-circle"></i> <span>Ratt Session</span>
+            <a href="{{ url_for('rattrapages_list') }}" class="{{ 'active' if request.endpoint == 'rattrapages_list' }}">
+                <i class="fas fa-scroll"></i> <span>Rattrapages</span>
+            </a>
             </a>
             <a href="{{ url_for('manage_data') }}" class="{{ 'active' if request.endpoint == 'manage_data' }}">
-                <i class="fas fa-cog"></i> <span>Paramètres</span>
+                <i class="fas fa-cog "></i> <span>Paramètres</span>
             </a>
+
+             <a href="{{ url_for('logout') }}" class="{{ 'active' if request.endpoint == 'logout' }}">
+                <i class="fas fa-power-off me-2 "></i> <span>Déconnexion</span>
+            </a>
+
         </div>
     </div>
 

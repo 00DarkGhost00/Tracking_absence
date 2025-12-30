@@ -1,0 +1,4 @@
+CMD ode Admin
+
+.\venv\Scripts\activate
+python app.py

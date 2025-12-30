@@ -1,7 +1,10 @@
 import os, sqlite3
 import pandas as pd
+import socket
+from zeroconf import ServiceInfo, Zeroconf
 from flask import Flask, render_template, request, redirect, url_for, g
 from flask import send_file
+from flask import session, flash 
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
@@ -9,14 +12,51 @@ app.config['SECRET_KEY'] = 'esef_manager_2025'
 DATABASE = 'absence_tracker.db'
 
 
+
+
+# --- AUTH CONFIG ---
+ADMIN_USER = "admin"
+ADMIN_PASS = "esef2025" # Change this to your preferred password
+
+# --- LOGIN DECORATOR ---
+# This is a "gatekeeper" - if you aren't logged in, it kicks you to the login page
+from functools import wraps
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# --- NEW LOGIN ROUTES ---
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        if request.form['username'] == ADMIN_USER and request.form['password'] == ADMIN_PASS:
+            session['logged_in'] = True
+            return redirect(url_for('dashboard'))
+        else:
+            flash("Identifiants incorrects", "danger")
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
+
+
 # --- BACKUP & RESTORE ROUTES ---
 
 @app.route('/export_db')
+@login_required
 def export_db():
     # This sends the actual database file to the user's browser
     return send_file(DATABASE, as_attachment=True, download_name=f"backup_esef_{datetime.now().strftime('%Y-%m-%d')}.db")
 
 @app.route('/restore_db', methods=['POST'])
+@login_required
 def restore_db():
     if 'backup_file' in request.files:
         file = request.files['backup_file']
@@ -98,6 +138,7 @@ def get_stats_for_prof(prof_name):
 # --- 3. ROUTES ---
 
 @app.route('/')
+@login_required
 def index():
     db = get_db()
     try:
@@ -107,6 +148,7 @@ def index():
     return render_template('index.html', rooms=rooms, time_slots=slots, today=datetime.now().strftime('%Y-%m-%d'))
 
 @app.route('/process_absence', methods=['POST'])
+@login_required
 def process_absence():
     db = get_db()
     d, s, rms = request.form['date'], request.form['time_slot'], request.form.getlist('empty_rooms')
@@ -128,6 +170,7 @@ def process_absence():
     return redirect(url_for('dashboard'))
 
 @app.route('/dashboard')
+@login_required
 def dashboard():
     db = get_db()
     recent = db.execute("SELECT * FROM AbsenceRecords ORDER BY id DESC LIMIT 15").fetchall()
@@ -137,6 +180,7 @@ def dashboard():
     return render_template('dashboard.html', recent_absences=recent, top_prof=top_p, top_filiere=top_f, top_day=top_d)
 
 @app.route('/professors')
+@login_required
 def professors_list():
     db = get_db()
     try: profs = db.execute("SELECT DISTINCT Professeur FROM MasterSchedule ORDER BY Professeur").fetchall()
@@ -148,6 +192,7 @@ def professors_list():
     return render_template('professors.html', data=data)
 
 @app.route('/professor/<path:prof_name>')
+@login_required
 def professor_details(prof_name):
     db = get_db()
     theo, abs_h, ratt_h, real = get_stats_for_prof(prof_name)
@@ -159,8 +204,32 @@ def professor_details(prof_name):
                            absences=absences, rattrapages=rattrapages, 
                            sem_start=s['value'] if s else "2025-10-06", sem_end=e['value'] if e else "2025-12-27")
 
-# --- THIS IS THE MISSING ROUTE CAUSING THE BUILDERROR ---
+
+@app.route('/rattrapages')
+@login_required
+def rattrapages_list():
+    db = get_db()
+    # Fetch all make-up sessions sorted by date
+    rattrapages = db.execute("SELECT * FROM RattSessions ORDER BY date_ratt DESC").fetchall()
+    return render_template('rattrapages.html', rattrapages=rattrapages)
+
+
+@app.route('/delete_ratt/<int:ratt_id>', methods=['POST'])
+def delete_ratt(ratt_id):
+    db = get_db()
+    # Find the professor's name before deleting the record
+    row = db.execute("SELECT Professeur FROM RattSessions WHERE id=?", (ratt_id,)).fetchone()
+    prof_name = row['Professeur'] if row else None
+    
+    db.execute("DELETE FROM RattSessions WHERE id=?", (ratt_id,))
+    db.commit()
+    
+    if prof_name:
+        return redirect(url_for('professor_details', prof_name=prof_name))
+    return redirect(url_for('rattrapages_list'))
+
 @app.route('/ratt_session')
+@login_required
 def ratt_session():
     db = get_db()
     try: profs = db.execute("SELECT DISTINCT Professeur FROM MasterSchedule ORDER BY Professeur").fetchall()
@@ -171,7 +240,7 @@ def ratt_session():
 @app.route('/process_ratt', methods=['POST'])
 def process_ratt():
     db = get_db()
-    # Updated to match your HTML 'name' attributes: 'professeur' and 'time_slot'
+
     db.execute("INSERT INTO RattSessions (date_ratt, Professeur, Lheure) VALUES (?,?,?)", 
                (request.form['date'], request.form['professeur'], request.form['time_slot']))
     db.commit()
@@ -199,11 +268,19 @@ def manage_data():
     e = db.execute("SELECT value FROM Config WHERE key='sem_end'").fetchone()
     return render_template('manage.html', s=s['value'] if s else "2025-10-06", e=e['value'] if e else "2025-12-27")
 
-@app.route('/delete/<int:absence_id>', methods=['POST'])
+@app.route('/delete_absence/<int:absence_id>', methods=['POST'])
 def delete_absence(absence_id):
     db = get_db()
+    # Find the professor's name before deleting the record
+    row = db.execute("SELECT Professeur FROM AbsenceRecords WHERE id=?", (absence_id,)).fetchone()
+    prof_name = row['Professeur'] if row else None
+    
     db.execute("DELETE FROM AbsenceRecords WHERE id=?", (absence_id,))
     db.commit()
+    
+    # Redirect back to the professor's page if possible
+    if prof_name:
+        return redirect(url_for('professor_details', prof_name=prof_name))
     return redirect(url_for('dashboard'))
 
 @app.route('/reset_semester', methods=['POST'])
@@ -217,4 +294,30 @@ def reset_semester():
     return redirect(url_for('manage_data'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # 1. Get your local IP address automatically
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    local_ip = s.getsockname()[0]
+    s.close()
+
+    # 2. Broadcast the name "tracker.local" to the network
+    desc = {'path': '/'}
+    info = ServiceInfo(
+        "_http._tcp.local.",
+        "tracker._http._tcp.local.",
+        addresses=[socket.inet_aton(local_ip)],
+        port=80,
+        properties=desc,
+        server="tracker.local.",
+    )
+
+    zeroconf = Zeroconf()
+    zeroconf.register_service(info)
+    print(f"Broadcasting as http://tracker.local on {local_ip}")
+
+    try:
+        # Run on Port 80 so users don't have to type :5000
+        app.run(host='0.0.0.0', port=80)
+    finally:
+        zeroconf.unregister_service(info)
+        zeroconf.close()
