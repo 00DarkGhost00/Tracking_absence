@@ -950,17 +950,23 @@ def reset_semester():
 
 # FIX 9: The networking code at the end is completed safely
 if __name__ == '__main__':
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    local_ip = s.getsockname()[0]
-    s.close()
-    
-    info = ServiceInfo("_http._tcp.local.", "tracker._http._tcp.local.", addresses=[socket.inet_aton(local_ip)], port=80, server="tracker.local.")
-    zeroconf = Zeroconf()
-    zeroconf.register_service(info)
-    
-    try: 
+    # L'astuce os.environ permet d'éviter le crash "NonUniqueNameException"
+    # en empêchant Zeroconf de se lancer en double à cause du mode debug=True de Flask.
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        
+        info = ServiceInfo("_http._tcp.local.", "tracker._http._tcp.local.", addresses=[socket.inet_aton(local_ip)], port=80, server="tracker.local.")
+        zeroconf = Zeroconf()
+        zeroconf.register_service(info)
+        
+        try: 
+            app.run(host='0.0.0.0', port=80, debug=True)
+        finally: 
+            zeroconf.unregister_service(info)
+            zeroconf.close()
+    else:
+        # Lancement normal (le processus parent)
         app.run(host='0.0.0.0', port=80, debug=True)
-    finally: 
-        zeroconf.unregister_service(info)
-        zeroconf.close()
