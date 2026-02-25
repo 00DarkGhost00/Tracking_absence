@@ -32,7 +32,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th><th>Date</th><th>Professeur</th><th>Filière</th><th>Groupe</th><th>Créneau</th><th>Salle</th><th>Action</th>
+                            <th>ID</th><th>Date</th><th>Professeur</th><th>Filière</th><th>Groupe</th><th>Créneau</th><th>Salle</th><th>Module</th><th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -45,6 +45,7 @@
                                 <td>{{ entry.Groupe }}</td>
                                 <td>{{ entry.Lheure }}</td>
                                 <td>{{ entry.Salle }}</td>
+                                <td><span class="badge bg-secondary">{{ entry.Module }}</span></td>
                                 <td>
                                     <form method="POST" action="{{ url_for('delete_absence', entry_id=entry.id) }}" style="display:inline;">
                                         <button class="delete-btn" type="submit" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette absence enregistrée (ID: {{ entry.id }})?');">Supprimer</button>

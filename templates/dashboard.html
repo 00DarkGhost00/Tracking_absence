@@ -1,98 +1,210 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4 text-navy"><i class="fas fa-chart-line me-2"></i>Tableau de Bord</h2>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <div class="row g-4 mb-5">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm bg-white h-100">
-                <div class="card-body text-center p-4">
-                    <div class="rounded-circle bg-danger bg-opacity-10 p-3 d-inline-block mb-3">
-                        <i class="fas fa-user-tie fa-2x text-danger"></i>
-                    </div>
-                    <h6 class="text-muted text-uppercase small fw-bold">Top Professeur Absent</h6>
-                    <h4 class="fw-bold mb-0">
-                        {{ top_prof['Professeur'] if top_prof else 'Aucune donnée' }}
-                    </h4>
-                    {% if top_prof %}
-                    <small class="text-danger fw-bold">{{ top_prof['c'] }} absences</small>
-                    {% endif %}
-                </div>
-            </div>
+<div class="container-fluid py-4 px-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="academic-title text-navy mb-1">
+                <i class="fas fa-chart-line text-gold me-2"></i>Tableau de Bord
+            </h2>
+            <p class="text-muted small text-uppercase tracking-wide mb-0">Vue globale des indicateurs de présence</p>
         </div>
-
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm bg-white h-100">
-                <div class="card-body text-center p-4">
-                    <div class="rounded-circle bg-warning bg-opacity-10 p-3 d-inline-block mb-3">
-                        <i class="fas fa-graduation-cap fa-2x text-warning"></i>
-                    </div>
-                    <h6 class="text-muted text-uppercase small fw-bold">Top Filière Impactée</h6>
-                    <h4 class="fw-bold mb-0">
-                        {{ top_filiere['Filiere'] if top_filiere else 'Aucune donnée' }}
-                    </h4>
-                    {% if top_filiere %}
-                    <small class="text-warning fw-bold">{{ top_filiere['c'] }} séances perdues</small>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm bg-white h-100">
-                <div class="card-body text-center p-4">
-                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 d-inline-block mb-3">
-                        <i class="fa-solid fa-calendar-days fa-2x text-primary"></i>
-                    </div>
-                    <h6 class="text-muted text-uppercase small fw-bold">Jour le plus critique</h6>
-                    <h4 class="fw-bold mb-0">
-                        {{ top_day['Jour'] if top_day else 'Aucune donnée' }}
-                    </h4>
-                    {% if top_day %}
-                    <small class="text-primary fw-bold">Pic d'absences</small>
-                    {% endif %}
-                </div>
-            </div>
+        
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-navy shadow-sm">
+                <i class="fas fa-user-times me-2"></i>Saisir Absence
+            </a>
+            <a href="{{ url_for('ratt_session') }}" class="btn btn-premium shadow-sm">
+                <i class="fas fa-plus-circle me-2"></i>Planifier Rattrapage
+            </a>
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0 fw-bold text-navy"><i class="fas fa-history me-2"></i>Absences Récentes</h5>
+    <div class="row g-4 mb-5">
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm bg-white h-100 stat-card">
+                <div class="card-body p-4 position-relative overflow-hidden">
+                    <div class="icon-bg-watermark text-danger"><i class="fas fa-user-tie"></i></div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h6 class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">Prof le plus absent</h6>
+                        <div class="icon-circle-small bg-danger bg-opacity-10 text-danger"><i class="fas fa-exclamation-triangle"></i></div>
+                    </div>
+                    <h4 class="fw-bold text-navy text-truncate mb-1" title="{{ top_prof['Professeur'] if top_prof else 'N/A' }}">
+                        {{ top_prof['Professeur'] if top_prof else 'Aucune donnée' }}
+                    </h4>
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">
+                        {{ top_prof['c'] if top_prof else 0 }} absences cumulées
+                    </span>
+                </div>
+            </div>
         </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm bg-white h-100 stat-card">
+                <div class="card-body p-4 position-relative overflow-hidden">
+                    <div class="icon-bg-watermark text-warning"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h6 class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">Filière la plus impactée</h6>
+                        <div class="icon-circle-small bg-warning bg-opacity-10 text-warning"><i class="fas fa-chart-bar"></i></div>
+                    </div>
+                    <h4 class="fw-bold text-navy text-truncate mb-1">
+                        {{ top_filiere['Filiere'] if top_filiere else 'Aucune donnée' }}
+                    </h4>
+                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">
+                        {{ top_filiere['c'] if top_filiere else 0 }} séances perdues
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm bg-white h-100 stat-card">
+                <div class="card-body p-4 position-relative overflow-hidden">
+                    <div class="icon-bg-watermark text-info"><i class="fas fa-calendar-times"></i></div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h6 class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">Jour le plus critique</h6>
+                        <div class="icon-circle-small bg-info bg-opacity-10 text-info"><i class="fas fa-calendar-day"></i></div>
+                    </div>
+                    <h4 class="fw-bold text-navy mb-1">
+                        {{ top_day['Jour'] if top_day else 'Aucune donnée' }}
+                    </h4>
+                    {% if top_day %}
+                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1">
+                        {{ top_day['c'] }} absences le {{ top_day['Jour']|lower }}
+                    </span>
+                    {% else %}
+                    <span class="text-muted small fw-600">Données insuffisantes</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm bg-navy h-100 stat-card text-white">
+                <div class="card-body p-4 position-relative overflow-hidden">
+                    <div class="icon-bg-watermark text-white opacity-10"><i class="fas fa-sync-alt"></i></div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h6 class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">Taux de Récupération</h6>
+                        <div class="icon-circle-small bg-white bg-opacity-25 text-gold"><i class="fas fa-check-double"></i></div>
+                    </div>
+                    <h4 class="fw-bold text-gold mb-2">{{ taux_recup }}%</h4>
+                    
+                    <div class="progress mb-2" style="height: 6px; background-color: rgba(255,255,255,0.2);">
+                        <div class="progress-bar bg-gold" role="progressbar" style="width: {{ taux_recup }}%;"></div>
+                    </div>
+                    <div class="d-flex justify-content-between text-white-50" style="font-size: 0.7rem;">
+                        <span>{{ total_absences }} Absences</span>
+                        <span>{{ total_rattrapages }} Rattrapages</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card border-0 shadow-lg academic-card">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-navy"><i class="fas fa-history text-gold me-2"></i>Historique des Absences</h5>
+            <a href="{{ url_for('professors_list') }}" class="btn btn-sm btn-outline-secondary">Voir le suivi détaillé <i class="fas fa-arrow-right ms-1"></i></a>
+        </div>
+        
+        <div class="bg-light-gray px-4 py-3 border-bottom d-flex gap-3 flex-wrap align-items-center">
+            
+            <div class="flex-grow-1" style="min-width: 200px;">
+                <div class="input-group input-group-sm shadow-sm rounded">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                    <input type="text" id="filterText" class="form-control border-start-0 ps-0 fw-500" placeholder="Chercher un prof, module, filière...">
+                </div>
+            </div>
+            
+            <div style="width: 150px;">
+                <input type="date" id="filterDate" class="form-control form-control-sm shadow-sm text-muted fw-500" title="Filtrer par date précise">
+            </div>
+            
+            <div style="width: 160px;">
+                <select id="filterTime" class="form-select form-select-sm shadow-sm text-muted fw-500">
+                    <option value="">Tous les créneaux</option>
+                    <option value="8h30 - 11h30">8h30 - 11h30</option>
+                    <option value="11h45 - 14h45">11h45 - 14h45</option>
+                    <option value="15h00 - 18h00">15h00 - 18h00</option>
+                </select>
+            </div>
+            
+            <div>
+                <button id="resetFilters" class="btn btn-sm btn-outline-danger shadow-sm px-3" title="Effacer les filtres">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0 custom-table" id="absencesTable">
+                    <thead class="bg-white text-navy text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 10;">
                         <tr>
-                            <th>Date</th>
-                            <th>Professeur</th>
-                            <th>Filière</th>
-                            <th>Créneau</th>
-                            <th class="text-center">Action</th>
+                            <th class="py-3 ps-4 border-bottom">Date</th>
+                            <th class="py-3 border-bottom">Professeur</th>
+                            <th class="py-3 border-bottom">Classe (Filière/Sem)</th>
+                            <th class="py-3 border-bottom">Groupe</th>
+                            <th class="py-3 border-bottom">Module</th>
+                            <th class="py-3 border-bottom">Créneau</th>
+                            <th class="py-3 border-bottom text-center">Action</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="border-top-0">
                         {% for record in recent_absences %}
-                        <tr>
-                            <td class="fw-bold">{{ record.date_absent }}</td>
-                            <td>{{ record.Professeur }}</td>
-                            <td><span class="badge bg-info text-dark">{{ record.Filiere }}</span></td>
-                            <td>{{ record.Lheure }}</td>
+                        <tr class="absence-row">
+                            <td class="ps-4 fw-bold text-dark row-date" style="font-size: 0.85rem;">{{ record.date_absent }}</td>
+                            <td class="row-prof"><strong class="text-navy">{{ record.Professeur }}</strong></td>
+                            <td class="row-filiere">
+                                <span class="badge bg-light text-navy border px-2 py-1">
+                                    {{ record.Filiere }} {% if record.Semestre %} (S{{ record.Semestre }}) {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if record.Groupe %}
+                                    <span class="text-muted" style="font-size: 0.85rem;">{{ record.Groupe }}</span>
+                                {% else %}
+                                    <span class="text-muted fst-italic opacity-50" style="font-size: 0.8rem;">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="row-module">
+                                {% if record.Module %}
+                                    <span class="text-muted" style="font-size: 0.85rem;">{{ record.Module }}</span>
+                                {% else %}
+                                    <span class="text-muted fst-italic opacity-50" style="font-size: 0.8rem;">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="row-time">
+                                <span class="badge time-badge"><i class="far fa-clock me-1"></i>{{ record.Lheure }}</span>
+                            </td>
                             <td class="text-center">
-                                <form action="{{ url_for('delete_absence', absence_id=record.id) }}" method="POST" onsubmit="return confirm('Supprimer cette absence ?');">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-trash"></i>
+                                <form action="{{ url_for('delete_absence', absence_id=record.id) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette absence ?');">
+                                    <button type="submit" class="btn btn-delete btn-sm" title="Supprimer">
+                                        <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </form>
                             </td>
                         </tr>
                         {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">Aucune absence enregistrée pour le moment.</td>
+                        <tr id="noDataRow">
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <div class="opacity-50 mb-2"><i class="fas fa-clipboard-check fa-3x"></i></div>
+                                <span>Aucune absence enregistrée.</span>
+                            </td>
                         </tr>
                         {% endfor %}
+                        
+                        <tr id="noResultRow" style="display: none;">
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <div class="opacity-25 mb-2"><i class="fas fa-search fa-3x"></i></div>
+                                <span>Aucune absence ne correspond à votre recherche.</span>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -101,7 +213,110 @@
 </div>
 
 <style>
-    .text-navy { color: #002147; }
-    .bg-opacity-10 { --bs-bg-opacity: 0.1; }
+    :root { 
+        --navy: #002147; 
+        --navy-dark: #00152e;
+        --gold: #C5A059; 
+        --light-gray: #f8fafc; 
+        --border-color: #e2e8f0;
+    }
+
+    body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; }
+    
+    .academic-title { font-family: 'Playfair Display', serif; font-weight: 700; letter-spacing: -0.5px; }
+    .tracking-wide { letter-spacing: 1.5px; font-weight: 600; font-size: 0.75rem; }
+    .fw-500 { font-weight: 500; }
+    
+    .text-gold { color: var(--gold); }
+    .text-navy { color: var(--navy); }
+    .bg-navy { background-color: var(--navy) !important; }
+    .bg-gold { background-color: var(--gold) !important; }
+    .bg-light-gray { background-color: var(--light-gray); }
+
+    .academic-card { border-radius: 12px; overflow: hidden; }
+    
+    .stat-card { border-radius: 16px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1) !important; }
+    
+    .icon-circle-small { width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+    .icon-bg-watermark { position: absolute; right: -15px; bottom: -20px; font-size: 100px; opacity: 0.04; transform: rotate(-15deg); pointer-events: none; }
+
+    .btn-premium { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%); color: white; font-weight: 500; border: none; transition: all 0.3s ease; }
+    .btn-premium:hover { background: linear-gradient(135deg, var(--gold) 0%, #a3803d 100%); color: white; transform: translateY(-1px); }
+    
+    .btn-outline-navy { color: var(--navy); border: 1px solid #cbd5e1; background: white; font-weight: 500; transition: all 0.3s ease; }
+    .btn-outline-navy:hover { background: var(--light-gray); border-color: var(--navy); color: var(--navy); }
+
+    .btn-delete { color: #ef4444; background-color: rgba(239, 68, 68, 0.1); border: none; border-radius: 6px; transition: all 0.2s; }
+    .btn-delete:hover { background-color: #ef4444; color: white; }
+
+    .custom-table > :not(caption) > * > * { border-bottom-color: var(--border-color); padding: 1rem 0.5rem; }
+    .custom-table tbody tr:hover { background-color: rgba(0, 33, 71, 0.02); }
+    
+    .time-badge { background-color: rgba(0, 33, 71, 0.05); color: var(--navy); border: 1px solid rgba(0, 33, 71, 0.1); font-weight: 600; letter-spacing: 0.5px; padding: 5px 8px; }
+    
+    /* Input custom styling for filters */
+    .input-group-text { border-color: #dee2e6; }
+    .form-control:focus, .form-select:focus { border-color: var(--navy); box-shadow: 0 0 0 0.25rem rgba(0, 33, 71, 0.1); }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterText = document.getElementById('filterText');
+        const filterDate = document.getElementById('filterDate');
+        const filterTime = document.getElementById('filterTime');
+        const resetBtn = document.getElementById('resetFilters');
+        
+        const rows = document.querySelectorAll('.absence-row');
+        const noResultRow = document.getElementById('noResultRow');
+
+        function applyFilters() {
+            const textVal = filterText.value.toLowerCase().trim();
+            const dateVal = filterDate.value; // YYYY-MM-DD
+            const timeVal = filterTime.value;
+            
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const rowDate = row.querySelector('.row-date').textContent.trim();
+                const rowProf = row.querySelector('.row-prof').textContent.toLowerCase();
+                const rowFiliere = row.querySelector('.row-filiere').textContent.toLowerCase();
+                const rowModule = row.querySelector('.row-module').textContent.toLowerCase();
+                const rowTime = row.querySelector('.row-time').textContent.trim();
+
+                // On vérifie si la ligne correspond à chacun des 3 filtres
+                let matchesText = (textVal === "") || rowProf.includes(textVal) || rowFiliere.includes(textVal) || rowModule.includes(textVal);
+                let matchesDate = (dateVal === "") || (rowDate === dateVal);
+                let matchesTime = (timeVal === "") || rowTime.includes(timeVal);
+
+                if (matchesText && matchesDate && matchesTime) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Gérer l'affichage du message "Aucun résultat"
+            if (visibleCount === 0 && rows.length > 0) {
+                noResultRow.style.display = '';
+            } else {
+                noResultRow.style.display = 'none';
+            }
+        }
+
+        // Écouter les événements de frappe clavier et de sélection
+        filterText.addEventListener('input', applyFilters);
+        filterDate.addEventListener('change', applyFilters);
+        filterTime.addEventListener('change', applyFilters);
+
+        // Réinitialiser les filtres
+        resetBtn.addEventListener('click', () => {
+            filterText.value = '';
+            filterDate.value = '';
+            filterTime.value = '';
+            applyFilters();
+        });
+    });
+</script>
 {% endblock %}

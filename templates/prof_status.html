@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="mb-4">
+        <h2 class="fw-bold text-navy"><i class="fas fa-id-badge me-2"></i>Gestion du Corps Professoral</h2>
+        <p class="text-muted">Définition des statuts et affectations des professeurs (Permanents / Vacataires).</p>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-xl-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold text-navy mb-0"><i class="fas fa-user-plus me-2"></i>Ajout Manuel</h6>
+                </div>
+                <div class="card-body p-4 bg-light">
+                    <form method="POST" action="{{ url_for('prof_status') }}" class="row g-3 align-items-end">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Nom du Professeur</label>
+                            <input type="text" name="prof_name" class="form-control" placeholder="ex: Pr. ALAMI MOHAMMED" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Statut</label>
+                            <select name="prof_status" class="form-select fw-bold" required>
+                                <option value="Vacataire" selected>Vacataire</option>
+                                <option value="Permanent">Permanent</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-navy w-100 fw-bold">Ajouter</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h6 class="fw-bold text-navy mb-0"><i class="fas fa-magic me-2"></i>Importation en Masse</h6>
+                </div>
+                <div class="card-body p-4 bg-light">
+                    <form method="POST" action="{{ url_for('auto_assign_status') }}" enctype="multipart/form-data" class="row g-3 align-items-end">
+                        <div class="col-sm-8">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Fichier CSV (Permanents)</label>
+                            <input type="file" name="file" class="form-control" accept=".csv" required>
+                        </div>
+                        <div class="col-sm-4">
+                            <button type="submit" class="btn btn-outline-secondary w-100 fw-bold">
+                                <i class="fas fa-upload me-1"></i> Importer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <h5 class="fw-bold text-navy mb-0 d-flex align-items-center">
+                <i class="fas fa-list me-2"></i>Répertoire des Professeurs
+                <span id="profCount" class="badge bg-navy text-white ms-3 rounded-pill">
+                    {{ professors|length }}
+                </span>
+            </h5>
+            
+            <div class="d-flex gap-2">
+                <select id="statusFilter" class="form-select form-select-sm border bg-light fw-bold text-dark" style="max-width: 150px;">
+                    <option value="ALL">Tous</option>
+                    <option value="PERMANENT">Permanents</option>
+                    <option value="VACATAIRE">Vacataires</option>
+                </select>
+                
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" id="statusSearch" class="form-control border-start-0 bg-light" placeholder="Rechercher...">
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small text-uppercase" style="position: sticky; top: 0; z-index: 1;">
+                        <tr>
+                            <th class="py-3 ps-4 w-50 fw-bold">Nom du Professeur</th>
+                            <th class="py-3 text-center fw-bold">Statut</th>
+                            <th class="py-3 text-end pe-4 fw-bold">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="profTableBody">
+                        {% for p in professors %}
+                        <tr class="prof-row">
+                            <td class="ps-4 fw-bold text-dark">{{ p.name }}</td>
+                            <td class="prof-status-cell text-center">
+                                {% if p.status == 'Permanent' %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 py-2 rounded-pill">
+                                        {{ p.status }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-3 py-2 rounded-pill">
+                                        {{ p.status }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('toggle_status', name=p.name) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                    <i class="fas fa-exchange-alt me-1"></i> Modifier
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-muted">Aucun professeur enregistré.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Couleurs principales académiques */
+    .text-navy { color: #002b5e !important; }
+    .bg-navy { background-color: #002b5e !important; }
+    
+    /* Boutons personnalisés lisibles */
+    .btn-navy { background-color: #002b5e; color: #ffffff; border: none; }
+    .btn-navy:hover { background-color: #001a38; color: #ffffff; }
+    
+    /* Scrollbar discrète */
+    .table-responsive::-webkit-scrollbar { width: 6px; }
+    .table-responsive::-webkit-scrollbar-track { background: #f8f9fa; }
+    .table-responsive::-webkit-scrollbar-thumb { background: #dee2e6; border-radius: 3px; }
+</style>
+
+<script>
+    // Le script de recherche reste identique
+    function filterTable() {
+        let textFilter = document.getElementById('statusSearch').value.toUpperCase().trim();
+        let statusFilter = document.getElementById('statusFilter').value.toUpperCase();
+        let rows = document.querySelectorAll('.prof-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            let text = row.cells[0].textContent.toUpperCase();
+            let status = row.querySelector('.prof-status-cell .badge').textContent.toUpperCase().trim();
+            
+            let matchesText = text.includes(textFilter);
+            let matchesStatus = (statusFilter === "ALL") || (status === statusFilter);
+            
+            if (matchesText && matchesStatus) {
+                row.style.display = "";
+                visibleCount++;
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        document.getElementById('profCount').textContent = visibleCount;
+    }
+
+    document.getElementById('statusSearch').addEventListener('input', filterTable);
+    document.getElementById('statusFilter').addEventListener('change', filterTable);
+    window.onload = filterTable;
+</script>
+{% endblock %}

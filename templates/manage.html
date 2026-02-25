@@ -1,88 +1,111 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 class="mb-4">⚙️ Paramètres du Système</h2>
+<div class="container-fluid py-4">
+    <div class="mb-4">
+        <h2 class="fw-bold text-navy"><i class="fas fa-cogs me-2"></i>Paramètres du Système</h2>
+        <p class="text-muted">Configuration de l'environnement académique et gestion des bases de données.</p>
+    </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card p-4 mb-4">
-            <h5>📅 Période du Semestre</h5>
-            <form method="POST">
-                <div class="mb-3">
-                    <label>Date de début</label>
-                    <input type="date" name="sem_start" class="form-control" value="{{ s }}" required>
+    <div class="row g-4 mb-4">
+        <div class="col-xl-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="fw-bold text-navy mb-0"><i class="far fa-calendar-alt me-2"></i>Période du Semestre</h5>
                 </div>
-                <div class="mb-3">
-                    <label>Date de fin</label>
-                    <input type="date" name="sem_end" class="form-control" value="{{ e }}" required>
+                <div class="card-body p-4 bg-light">
+                    <form method="POST">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Date de début</label>
+                                <input type="date" name="sem_start" class="form-control" value="{{ s }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Date de fin</label>
+                                <input type="date" name="sem_end" class="form-control" value="{{ e }}" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-navy w-100 fw-bold">
+                            <i class="fas fa-save me-2"></i>Enregistrer les dates
+                        </button>
+                    </form>
                 </div>
-                <button type="submit" class="btn btn-secondary w-100">Enregistrer les Dates</button>
-            </form>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card p-4">
-            <h5>📄 Importer l'Emploi du Temps</h5>
-            <form method="POST" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label>Nouveau fichier Database.csv</label>
-                    <input type="file" name="file" class="form-control">
-                </div>
-                <button type="submit" class="btn btn-outline-primary w-100">Mettre à Jour la Base</button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="card border-primary shadow-sm mb-4">
-    <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="fas fa-database me-2"></i>Sauvegarde et Restauration</h5>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6 border-end">
-                <h6>1. Sauvegarder</h6>
-                <p class="small text-muted">Téléchargez une copie complète de la base de données actuelle (incluant absences, rattrapages et emploi du temps).</p>
-                <a href="{{ url_for('export_db') }}" class="btn btn-outline-primary">
-                    <i class="fas fa-download me-2"></i>Télécharger le Backup (.db)
-                </a>
             </div>
-            
-            <div class="col-md-6">
-                <h6>2. Restaurer</h6>
-                <p class="small text-muted">Remplacez toutes les données actuelles par un fichier de sauvegarde précédent.</p>
-                <form action="{{ url_for('restore_db') }}" method="POST" enctype="multipart/form-data" onsubmit="return confirm('Attention: Cela écrasera TOUTES les données actuelles. Continuer ?');">
-                    <div class="input-group input-group-sm mb-2">
-                        <input type="file" name="backup_file" class="form-control" accept=".db" required>
-                        <button class="btn btn-warning" type="submit">Restaurer</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<hr class="my-5">
-
-<div class="card border-danger shadow-sm mb-5">
-    <div class="card-header bg-danger text-white">
-        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Zone de Danger - Nouvelle Semestre</h5>
-    </div>
-    <div class="card-body">
-        <p class="text-muted">
-            Utilisez ce bouton uniquement à la fin de l'année ou du semestre. Cela effacera l'emploi du temps actuel, 
-            toutes les absences enregistrées et tous les rattrapages.
-        </p>
-        <div class="alert alert-warning">
-            <strong>Conseil :</strong> Assurez-vous d'avoir imprimé ou sauvegardé vos rapports PDF avant de continuer.
         </div>
         
-        <form action="{{ url_for('reset_semester') }}" method="POST" onsubmit="return confirm('Êtes-vous ABSOLUMENT sûr ? Cette action est irréversible et supprimera toutes les données du semestre actuel.');">
-            <button type="submit" class="btn btn-danger">
-                <i class="fas fa-trash-alt me-2"></i>Réinitialiser l'application pour le nouveau semestre
-            </button>
-        </form>
+        <div class="col-xl-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="fw-bold text-navy mb-0"><i class="fas fa-file-csv me-2"></i>Importer l'Emploi du Temps</h5>
+                </div>
+                <div class="card-body p-4 bg-light d-flex flex-column justify-content-center">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Nouveau fichier Database.csv</label>
+                            <input type="file" name="file" class="form-control" accept=".csv" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-navy w-100 fw-bold">
+                            <i class="fas fa-sync-alt me-2"></i>Mettre à jour la base
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-5">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="fw-bold text-navy mb-0"><i class="fas fa-database me-2"></i>Sauvegarde & Restauration</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="row g-0">
+                <div class="col-md-6 border-end p-4">
+                    <h6 class="fw-bold text-dark mb-2">1. Exporter les données</h6>
+                    <p class="text-muted small mb-3">Téléchargez une copie complète de la base de données (absences, rattrapages, professeurs).</p>
+                    <a href="{{ url_for('export_db') }}" class="btn btn-outline-secondary btn-sm fw-bold">
+                        <i class="fas fa-download me-2"></i>Télécharger Backup (.db)
+                    </a>
+                </div>
+                
+                <div class="col-md-6 p-4">
+                    <h6 class="fw-bold text-dark mb-2">2. Restaurer un point de sauvegarde</h6>
+                    <p class="text-muted small mb-3">Remplacez toutes les données actuelles par un fichier de sauvegarde précédent.</p>
+                    <form action="{{ url_for('restore_db') }}" method="POST" enctype="multipart/form-data" onsubmit="return confirm('Attention : Cela écrasera TOUTES les données actuelles. Continuer ?');">
+                        <div class="input-group input-group-sm">
+                            <input type="file" name="backup_file" class="form-control" accept=".db" required>
+                            <button class="btn btn-secondary fw-bold" type="submit">Restaurer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-danger mb-4">
+        <div class="card-header bg-danger text-white py-3">
+            <h5 class="fw-bold mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Zone de Danger - Fin de Semestre</h5>
+        </div>
+        <div class="card-body p-4 bg-white">
+            <p class="text-dark mb-3">
+                Utilisez cette fonction uniquement à la transition entre deux semestres. Cette action <strong>effacera définitivement</strong> l'emploi du temps, les absences et les rattrapages actuels.
+            </p>
+            <div class="alert alert-warning py-2 mb-4">
+                <i class="fas fa-info-circle me-2"></i><strong>Conseil :</strong> Sauvegardez un Backup (.db) avant de continuer.
+            </div>
+            <form action="{{ url_for('reset_semester') }}" method="POST" onsubmit="return confirm('Êtes-vous ABSOLUMENT SÛR ? Cette action est irréversible.');">
+                <button type="submit" class="btn btn-danger fw-bold">
+                    <i class="fas fa-trash-alt me-2"></i>Réinitialiser l'application
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 
+<style>
+    .text-navy { color: #002b5e !important; }
+    .bg-navy { background-color: #002b5e !important; }
+    .btn-navy { background-color: #002b5e; color: #ffffff; border: none; }
+    .btn-navy:hover { background-color: #001a38; color: #ffffff; }
+    .btn-outline-navy { color: #002b5e; border: 1px solid #002b5e; background-color: transparent; }
+    .btn-outline-navy:hover { background-color: #002b5e; color: #ffffff; }
+</style>
 {% endblock %}

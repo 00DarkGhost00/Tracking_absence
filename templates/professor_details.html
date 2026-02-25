@@ -15,14 +15,19 @@
         <div class="text-center mb-5">
             <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" style="width: 100px;">
             <h2 class="mt-3 fw-bold text-navy">FICHE INDIVIDUELLE DE SUIVI</h2>
-            <h5 class="text-muted">Année Universitaire 2024 / 2025</h5>
+            <h5 class="text-muted">Année Universitaire 2025 / 2026</h5>
             <hr class="mx-auto" style="width: 200px; border-top: 3px solid #b8860b;">
         </div>
 
         <div class="row mb-4">
             <div class="col-6">
                 <p class="mb-1 text-muted">NOM DU PROFESSEUR :</p>
-                <h4 class="fw-bold">{{ prof_name }}</h4>
+                <h4 class="fw-bold d-flex align-items-center">
+                    {{ prof_name }}
+                    <span class="badge {{ 'bg-success' if status == 'Permanent' else 'bg-secondary' }} ms-3 fs-6 rounded-pill d-print-inline">
+                        {{ status }}
+                    </span>
+                </h4>
             </div>
             <div class="col-6 text-end">
                 <p class="mb-1 text-muted">PÉRIODE DE RÉFÉRENCE :</p>
@@ -59,18 +64,20 @@
                     <thead class="table-light">
                         <tr>
                             <th>Date</th>
-                            <th>Filière</th>
-                            <th>Groupe</th>
                             <th>Créneau</th>
-                            <th class="d-print-none text-center">Action</th> </tr>
+                            <th>Filière</th>
+                            <th>Semestre</th><th>Groupe</th><th>Module</th><th>Type</th>
+                            <th class="d-print-none text-center">Action</th> 
+                        </tr>
                     </thead>
                     <tbody>
                         {% for a in absences %}
                         <tr>
                             <td>{{ a.date_absent }}</td>
-                            <td>{{ a.Filiere }}</td>
-                            <td>{{ a.Groupe }}</td>
                             <td>{{ a.Lheure }}</td>
+                            <td>{{ a.Filiere }}</td>
+                            <td>{{ a.Semestre }}</td> <td>{{ a.Groupe }}</td><td>{{ a.module }}</td>
+                            <td>Absence Non Justifié</td>
                             <td class="d-print-none text-center">
                                 <form action="{{ url_for('delete_absence', absence_id=a.id) }}" method="POST" onsubmit="return confirm('Supprimer cette absence ?');">
                                     <button type="submit" class="btn btn-sm text-danger p-0">
@@ -93,14 +100,23 @@
                         <tr>
                             <th>Date</th>
                             <th>Créneau</th>
+                            <th>Filière</th>
+                            <th>Semestre</th>
+                            <th>Groupe</th>
+                            <th>Module</th>
                             <th>Type</th>
-                            <th class="d-print-none text-center">Action</th> </tr>
+                            <th class="d-print-none text-center">Action</th> 
+                        </tr>
                     </thead>
                     <tbody>
                         {% for r in rattrapages %}
                         <tr>
                             <td>{{ r.date_ratt }}</td>
                             <td>{{ r.Lheure }}</td>
+                            <td>{{ r.Filiere }}</td>
+                            <td>{{ r.semestre }}</td>
+                            <td>{{ r.groupe }}</td>
+                            <td>{{ r.module }}</td>
                             <td>Séance de Rattrapage</td>
                             <td class="d-print-none text-center">
                                 <form action="{{ url_for('delete_ratt', ratt_id=r.id) }}" method="POST" onsubmit="return confirm('Supprimer ce rattrapage ?');">

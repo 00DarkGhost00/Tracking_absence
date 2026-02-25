@@ -8,92 +8,154 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
         :root { 
             --navy: #002147; 
             --gold: #C5A059; 
-            --sidebar-width: 260px;
+            --gold-light: #fdfaf3;
+            --bg-light: #f8fafc; /* Gris très très clair pour le fond de page */
+            --sidebar-width: 270px;
+            --text-muted: #64748b;
         }
 
         body { 
-            background: #f4f7f6; 
+            background: var(--bg-light); 
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', sans-serif; /* Nouvelle police plus élégante */
+            color: #334155;
         }
 
-        /* Sidebar Styling */
+        /* --- SIDEBAR STYLING --- */
         .sidebar { 
             height: 100vh; 
             width: var(--sidebar-width); 
             position: fixed; 
             top: 0;
             left: 0;
-            background: var(--navy); 
-            color: white; 
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            background: #ffffff; /* Fond blanc pour faire ressortir le logo */
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.04); /* Ombre douce et moderne */
             z-index: 1000;
+            display: flex;
+            flex-direction: column;
         }
 
+        /* Mise en valeur du Logo */
         .sidebar-brand {
-            padding: 30px 20px;
+            padding: 35px 20px 25px;
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid #f1f5f9;
         }
 
         .sidebar-brand img {
-            width: 80px; /* Adjust size as needed */
+            max-width: 140px; /* Logo plus grand */
             height: auto;
             margin-bottom: 15px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05)); /* Légère ombre sous le logo */
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-brand img:hover {
+            transform: scale(1.03); /* Petit effet au passage de la souris */
         }
 
         .sidebar-brand h4 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: white;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--navy);
             margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
+        /* Liens de navigation */
         .nav-links {
-            padding-top: 20px;
+            padding: 20px 0;
+            overflow-y: auto; /* Scroll si l'écran est petit */
         }
 
         .sidebar a { 
-            color: rgba(255,255,255,0.7); 
-            padding: 15px 25px; 
-            display: block; 
+            color: var(--text-muted); 
+            padding: 14px 25px; 
+            display: flex; 
+            align-items: center;
             text-decoration: none; 
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             font-size: 0.95rem;
+            font-weight: 500;
+            border-left: 4px solid transparent; /* Prépare la bordure pour ne pas décaler le texte */
+            margin: 4px 15px; /* Marge pour faire un effet "bouton/pilule" */
+            border-radius: 8px;
         }
 
         .sidebar a i {
-            width: 25px;
+            width: 30px;
+            font-size: 1.1rem;
+            transition: color 0.3s ease;
         }
 
+        /* Effet au survol */
         .sidebar a:hover { 
-            background: rgba(255,255,255,0.05); 
-            color: white; 
+            background: #f1f5f9; 
+            color: var(--navy); 
+            transform: translateX(4px); /* Petit décalage vers la droite très fluide */
         }
 
+        .sidebar a:hover i {
+            color: var(--navy);
+        }
+
+        /* Effet du lien Actif (La page actuelle) */
         .sidebar a.active { 
-            background: rgba(72, 12, 151, 0.473); 
-            color: white; 
-            border-left: 5px solid var(--gold);
-            font-weight: bold;
+            background: var(--gold-light); 
+            color: var(--navy); 
+            border-left: 4px solid var(--gold);
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(197, 160, 89, 0.1);
         }
 
-        /* Main Content Area */
+        .sidebar a.active i {
+            color: var(--gold);
+        }
+
+        /* Bouton déconnexion stylisé différemment en bas */
+        .nav-links .logout-btn {
+            margin-top: auto;
+            color: #ef4444;
+        }
+        .nav-links .logout-btn:hover {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        /* --- MAIN CONTENT AREA --- */
         .main { 
             margin-left: var(--sidebar-width); 
             padding: 40px; 
             min-height: 100vh;
         }
 
-        /* Responsive Fix */
+        /* Notifications (Flash messages) repensées */
+        .alert {
+            border: none;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        .alert-success { background-color: #ecfdf5; color: #065f46; border-left: 4px solid #10b981; }
+        .alert-warning { background-color: #fffbeb; color: #92400e; border-left: 4px solid #f59e0b; }
+        .alert-danger { background-color: #fef2f2; color: #991b1b; border-left: 4px solid #ef4444; }
+
+        /* --- RESPONSIVE MOBILE --- */
         @media (max-width: 768px) {
-            .sidebar { width: 70px; }
+            .sidebar { width: 80px; }
+            .sidebar-brand { padding: 20px 10px; }
+            .sidebar-brand img { max-width: 50px; }
             .sidebar-brand h4, .sidebar a span { display: none; }
-            .main { margin-left: 70px; }
+            .sidebar a { justify-content: center; padding: 15px 0; margin: 5px 10px; }
+            .sidebar a i { width: auto; margin: 0; }
+            .sidebar a:hover { transform: none; }
+            .main { margin-left: 80px; padding: 20px; }
         }
     </style>
 </head>
@@ -101,38 +163,82 @@
 
     <div class="sidebar">
         <div class="sidebar-brand">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
-            <h4>ESEF Suivi Professeurs</h4>
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo ESEF">
+            <h4>Portail ESEF</h4>
         </div>
         
-        <div class="nav-links">
+        <div class="nav-links d-flex flex-column" style="height: calc(100vh - 160px);">
+            
+            {% set user_role = session.get('role', 'admin') %}
+
+            {% if user_role in ['admin', 'manager'] %}
             <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' }}">
-                <i class="fas fa-edit"></i> <span>Saisie</span>
+                <i class="fas fa-edit"></i> <span>Saisie des Absences</span>
             </a>
+            {% endif %}
+
+            {% if user_role in ['admin', 'manager','compta'] %}
             <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">
-                <i class="fas fa-chart-pie"></i> <span>Dashboard</span>
+                <i class="fas fa-chart-pie"></i> <span>Tableau de Bord</span>
+            </a>
+            {% endif %}
+
+            {% if user_role in ['admin', 'manager'] %}
+            <a href="{{ url_for('view_schedule') }}" class="{{ 'active' if request.endpoint == 'view_schedule' }}">
+                 <i class="fas fa-calendar-alt"></i> <span>Emploi du Temps</span>
+            </a>
+
+            {% endif %}
+
+            {% if user_role == 'admin' %}
+            <a href="{{ url_for('manage_holidays') }}" class="{{ 'active' if request.endpoint == 'manage_holidays' }}">
+                <i class="fas fa-calendar-times"></i> <span>Jours Exceptionnels</span> 
+            </a>
+            {% endif %}
+
+            <a href="{{ url_for('prof_status') }}" class="{{ 'active' if request.endpoint == 'prof_status' }}">
+                <i class="fas fa-id-badge"></i> <span>Statut Professeur</span>
             </a>
             <a href="{{ url_for('professors_list') }}" class="{{ 'active' if request.endpoint == 'professors_list' }}">
                 <i class="fas fa-search"></i> <span>Recherche & Heures</span>
             </a>
+
+            {% if user_role in ['admin', 'manager'] %}
             <a href="{{ url_for('ratt_session') }}" class="{{ 'active' if request.endpoint == 'ratt_session' }}">
-                <i class="fas fa-plus-circle"></i> <span>Ratt Session</span>
+                <i class="fas fa-plus-circle"></i> <span>Nouvelle Session Ratt.</span>
+            </a>
             <a href="{{ url_for('rattrapages_list') }}" class="{{ 'active' if request.endpoint == 'rattrapages_list' }}">
-                <i class="fas fa-scroll"></i> <span>Rattrapages</span>
+                <i class="fas fa-scroll"></i> <span>Historique Rattrapages</span>
             </a>
-            </a>
+            {% endif %}
+
+            {% if user_role == 'admin' %}
             <a href="{{ url_for('manage_data') }}" class="{{ 'active' if request.endpoint == 'manage_data' }}">
-                <i class="fas fa-cog "></i> <span>Paramètres</span>
+                <i class="fas fa-cog"></i> <span>Paramètres</span>
             </a>
-
-             <a href="{{ url_for('logout') }}" class="{{ 'active' if request.endpoint == 'logout' }}">
-                <i class="fas fa-power-off me-2 "></i> <span>Déconnexion</span>
+            {% endif %}
+            
+            <a href="{{ url_for('logout') }}" class="logout-btn mt-auto">
+                <i class="fas fa-power-off"></i> <span>Déconnexion ({{ session.get('username')|capitalize }})</span>
             </a>
-
         </div>
     </div>
 
     <div class="main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4">
+                {% for category, message in messages %}
+                    {% set alert_class = category if category in ['success', 'danger', 'warning', 'info'] else 'info' %}
+                    <div class="alert alert-{{ alert_class }} alert-dismissible fade show shadow-sm" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
         {% block content %}{% endblock %}
     </div>
 

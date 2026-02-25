@@ -1,74 +1,235 @@
 {% extends "base.html" %}
+
 {% block content %}
-<div class="container" style="max-width: 600px;">
-    <div class="card shadow-sm mt-4">
-        <div class="card-body p-4">
-            <h3 class="mb-4 text-navy"><i class="fas fa-calendar-plus me-2"></i>Ajouter un Rattrapage</h3>
-            
+<div class="container-fluid py-4">
+    <div class="mb-4">
+        <h2 class="fw-bold text-navy"><i class="fas fa-calendar-plus me-2"></i>Planification de Rattrapage</h2>
+        <p class="text-muted">Programmez une séance de remplacement pour un professeur et un module spécifiques.</p>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-5">
+        <div class="card-body p-4 p-md-5 bg-white">
             <form method="POST" action="{{ url_for('process_ratt') }}">
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Rechercher / Sélectionner Professeur</label>
-                    <div class="input-group mb-2">
-                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" id="profSearch" class="form-control" placeholder="Tapez le nom du professeur...">
-                    </div>
-                    
-                    <select class="form-select" id="profSelect" name="professeur" required size="5">
-                        <option value="" selected disabled>Sélectionnez un professeur...</option>
-                        {% for p in professors %}
-                        <option value="{{ p.Professeur }}">{{ p.Professeur }}</option>
-                        {% endfor %}
-                    </select>
-                    <small class="text-muted">Le menu se filtre automatiquement pendant la saisie.</small>
-                </div>
                 
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Date de la séance</label>
-                    <input type="date" class="form-control" name="date" value="{{ today }}" required>
+                <div class="row g-5">
+                    <div class="col-lg-5">
+                        <div class="p-4 rounded bg-light h-100 border">
+                            <h6 class="fw-bold text-navy mb-3 text-uppercase small">
+                                <span class="badge bg-navy me-2">1</span> Sélection de l'enseignant
+                            </h6>
+                            
+                            <div class="input-group mb-3">
+                                <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                                <input type="text" id="profSearch" class="form-control" placeholder="Rechercher par nom...">
+                            </div>
+                            
+                            <select class="form-select w-100 shadow-sm custom-listbox" id="profSelect" name="professeur" required size="10">
+                                <option value="" disabled selected class="text-muted fst-italic d-none">Choix du professeur...</option>
+                                {% for p in professors %}
+                                <option value="{{ p.Professeur }}">{{ p.Professeur }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-7">
+                        <div class="p-4 rounded border h-100 bg-white">
+                            <h6 class="fw-bold text-navy mb-4 text-uppercase small">
+                                <span class="badge bg-navy me-2">2</span> Paramètres de la séance
+                            </h6>
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Module & Classe (Filière / Semestre / Groupe)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-book-open text-muted"></i></span>
+                                    <select class="form-select fw-bold text-dark" name="module_data" id="moduleSelect" required>
+                                        <option value="" disabled selected>En attente de la sélection du professeur...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-bold text-muted small text-uppercase">Date</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="far fa-calendar-alt text-muted"></i></span>
+                                        <input type="date" class="form-control fw-bold" name="date" id="rattDate" value="{{ today }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-bold text-muted small text-uppercase">Créneau Horaire</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="far fa-clock text-muted"></i></span>
+                                        <select class="form-select fw-bold" name="time_slot" id="rattSlot" required>
+                                            {% for slot in time_slots %}
+                                            <option value="{{ slot }}">{{ slot }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-3 rounded mt-4" style="background-color: #f8f9fa; border: 1px solid #dee2e6;">
+                                <label class="form-label fw-bold text-navy small text-uppercase mb-2">Affectation de la Salle</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white"><i class="fas fa-door-open text-navy"></i></span>
+                                    <select class="form-select fw-bold text-navy" name="salle" id="salleSelect" required>
+                                        <option value="" disabled selected>Calcul de la disponibilité en cours...</option>
+                                    </select>
+                                </div>
+                                <small class="text-muted mt-2 d-block" style="font-size: 0.75rem;">
+                                    <i class="fas fa-info-circle me-1"></i> Propose automatiquement la salle habituelle du module ou les salles vides.
+                                </small>
+                            </div>
+
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Créneau Horaire</label>
-                    <select class="form-select" name="time_slot" required>
-                        {% for slot in time_slots %}
-                        <option value="{{ slot }}">{{ slot }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                <hr class="my-5">
 
-                <div class="d-grid mt-4">
-                    <button type="submit" class="btn btn-success btn-lg">Valider le Rattrapage</button>
+                <div class="d-flex justify-content-end">
+                    <a href="{{ url_for('rattrapages_list') }}" class="btn btn-outline-secondary px-4 me-3 fw-bold">Annuler</a>
+                    <button type="submit" class="btn btn-navy px-5 py-2 fw-bold">
+                        <i class="fas fa-save me-2"></i> Enregistrer le Rattrapage
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+<style>
+    .text-navy { color: #002b5e !important; }
+    .bg-navy { background-color: #002b5e !important; }
+    
+    .btn-navy { background-color: #002b5e; color: #ffffff; border: none; }
+    .btn-navy:hover { background-color: #001a38; color: #ffffff; }
+
+    /* Custom Listbox pour les profs */
+    .custom-listbox { border: 1px solid #ced4da; padding: 0; font-size: 0.9rem; }
+    .custom-listbox option { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; cursor: pointer; color: #334155; transition: background-color 0.1s; }
+    .custom-listbox option:hover, .custom-listbox option:focus { background-color: #f8f9fa; }
+    .custom-listbox option:checked { background-color: #002b5e !important; color: white !important; font-weight: bold; }
+</style>
+
 <script>
+    // 1. Filtrage Professeur
     document.getElementById('profSearch').addEventListener('keyup', function() {
         let filter = this.value.toUpperCase();
-        let select = document.getElementById('profSelect');
-        let options = select.getElementsByTagName('option');
-
+        let options = document.getElementById('profSelect').getElementsByTagName('option');
         for (let i = 0; i < options.length; i++) {
-            // Skip the first placeholder option
             if (options[i].disabled) continue;
-            
             let txtValue = options[i].textContent || options[i].innerText;
-            if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                options[i].style.display = "";
-            } else {
-                options[i].style.display = "none";
-            }
+            options[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
         }
     });
-</script>
 
-<style>
-    .text-navy { color: #002147; }
-    /* Makes the select look better when it has a 'size' attribute */
-    #profSelect {
-        overflow-y: auto;
+    // Éléments UI
+    const profSelect = document.getElementById('profSelect');
+    const moduleSelect = document.getElementById('moduleSelect');
+    const dateInput = document.getElementById('rattDate');
+    const slotInput = document.getElementById('rattSlot');
+    const salleSelect = document.getElementById('salleSelect');
+
+    // 2. Recherche Modules (Mise à jour avec focus sur le GROUPE)
+    profSelect.addEventListener('change', function() {
+        const profName = this.value;
+        moduleSelect.innerHTML = '<option value="" disabled selected>Recherche des modules...</option>';
+
+        fetch(`/api/prof_modules?prof=${encodeURIComponent(profName)}`)
+            .then(response => response.json())
+            .then(modules => {
+                if (modules.length === 0) {
+                    moduleSelect.innerHTML = '<option value="" disabled>Aucun module trouvé pour ce prof</option>';
+                } else {
+                    moduleSelect.innerHTML = '<option value="" disabled selected>👉 Sélectionnez le Groupe et le Module...</option>';
+                    
+                    // On trie les modules pour que les groupes s'affichent dans l'ordre (1, 2, 3...)
+                    modules.sort((a, b) => {
+                        let grpA = a.groupe || a.Groupe || "";
+                        let grpB = b.groupe || b.Groupe || "";
+                        return grpA.toString().localeCompare(grpB.toString());
+                    });
+
+                    modules.forEach(m => {
+                        let opt = document.createElement('option');
+                        
+                        // Sécurisation : on cherche "groupe" ou "Groupe" avec majuscule
+                        let grp = m.groupe || m.Groupe || m.GROUPE || 'Non spécifié';
+                        
+                        // Valeur envoyée à Python
+                        opt.value = `${m.Filiere}|${m.Semestre}|${m.Module}|${grp}`;
+                        
+                        // Affichage Ultra-Clair pour l'utilisateur : [ GROUPE X ] en premier !
+                        opt.textContent = `[  ${grp} ] ➔ S${m.Semestre} ${m.Filiere} : ${m.Module}`;
+                        
+                        moduleSelect.appendChild(opt);
+                    });
+                }
+                fetchAvailableRooms(); 
+            });
+    });
+
+    // 3. Gestion Intelligente des Salles (Habituelles + Libres)
+    function fetchAvailableRooms() {
+        const dateVal = dateInput.value;
+        const slotVal = slotInput.value;
+        const profVal = profSelect.value || '';
+        
+        let moduleVal = '';
+        if(moduleSelect.value) {
+            const parts = moduleSelect.value.split('|');
+            if(parts.length > 2) moduleVal = parts[2]; // L'index 2 est le Module
+        }
+
+        salleSelect.innerHTML = '<option value="" disabled selected>Recherche en cours...</option>';
+
+        fetch(`/api/available_rooms?date=${dateVal}&time_slot=${encodeURIComponent(slotVal)}&prof=${encodeURIComponent(profVal)}&module=${encodeURIComponent(moduleVal)}`)
+            .then(response => response.json())
+            .then(data => {
+                salleSelect.innerHTML = '<option value="" disabled selected>Sélectionnez une salle</option>';
+                
+                const usual = data.usual || [];
+                const available = data.available || [];
+
+                if (usual.length === 0 && available.length === 0) {
+                    salleSelect.innerHTML = '<option value="" disabled>Aucune salle disponible</option>';
+                    return;
+                }
+
+                // Salles Habituelles
+                if (usual.length > 0) {
+                    let optGroup = document.createElement('optgroup');
+                    optGroup.label = "📌 Salles Habituelles du Module";
+                    usual.forEach(room => {
+                        let opt = document.createElement('option');
+                        opt.value = room;
+                        let isFree = available.includes(room);
+                        opt.textContent = room + (isFree ? " (Libre actuellement)" : " (Occupée par son propre cours)");
+                        optGroup.appendChild(opt);
+                    });
+                    salleSelect.appendChild(optGroup);
+                }
+
+                // Salles Libres
+                let freeRooms = available.filter(r => !usual.includes(r));
+                if (freeRooms.length > 0) {
+                    let optGroup = document.createElement('optgroup');
+                    optGroup.label = "✅ Autres Salles Libres";
+                    freeRooms.forEach(room => {
+                        let opt = document.createElement('option');
+                        opt.value = room;
+                        opt.textContent = room;
+                        salleSelect.appendChild(opt);
+                    });
+                    salleSelect.appendChild(optGroup);
+                }
+            });
     }
-</style>
+
+    moduleSelect.addEventListener('change', fetchAvailableRooms);
+    dateInput.addEventListener('change', fetchAvailableRooms);
+    slotInput.addEventListener('change', fetchAvailableRooms);
+</script>
 {% endblock %}

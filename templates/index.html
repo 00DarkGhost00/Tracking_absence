@@ -1,53 +1,247 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="card shadow-sm">
-        <div class="card-body p-4">
-            <h2 class="card-title mb-4">📝 Saisie des Absences Quotidiennes</h2>
-            <p class="text-muted">Sélectionnez la date, le créneau, et cochez les salles qui sont restées <strong>vides</strong>.</p>
-            <hr>
-            
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="container d-flex justify-content-center align-items-center mt-4 mb-5">
+    <div class="card shadow-xl border-0 academic-card w-100" style="max-width: 900px;">
+        
+        <div class="card-header premium-navy-header text-center pt-5 pb-4 border-0">
+            <div class="icon-circle mx-auto mb-3 shadow">
+                <i class="fas fa-clipboard-check text-white"></i>
+            </div>
+            <h3 class="academic-title text-gold mb-1">Saisie des Absences</h3>
+            <p class="text-white-50 small text-uppercase tracking-wide">Déclaration des salles vacantes</p>
+        </div>
+
+        <div class="card-body px-4 px-md-5 pb-5 pt-4 bg-white">
             <form method="POST" action="{{ url_for('process_absence') }}">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">1. Date du Jour</label>
-                        <input type="date" class="form-control" name="date" value="{{ today }}" required>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">2. Créneau Horaire</label>
-                        <select class="form-select" name="time_slot" required>
-                            {% for slot in time_slots %}
-                                <option value="{{ slot }}">{{ slot }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-bold">3. Salles Vides Signalées</label>
-                    <div class="border rounded p-3 bg-light" style="max-height: 300px; overflow-y: auto;">
-                        <div class="row">
-                            {% for room in rooms %}
-                            <div class="col-sm-4 col-md-3 mb-2">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="empty_rooms" value="{{ room }}" id="check_{{ loop.index }}">
-                                    <label class="form-check-label" for="check_{{ loop.index }}">
-                                        {{ room }}
-                                    </label>
-                                </div>
+                
+                <div class="step-container p-4 rounded mb-4">
+                    <span class="step-badge">1</span>
+                    <h6 class="fw-bold text-navy mb-4 mt-1"><i class="far fa-clock me-2 text-gold"></i>Paramètres Temporels</h6>
+                    
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label academic-label">Date d'inspection</label>
+                            <div class="input-group custom-input-group shadow-sm">
+                                <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
+                                <input type="date" class="form-control py-2 fw-bold text-navy" name="date" value="{{ today }}" required>
                             </div>
-                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label academic-label">Créneau Horaire</label>
+                            <div class="input-group custom-input-group shadow-sm">
+                                <span class="input-group-text"><i class="fas fa-hourglass-half"></i></span>
+                                <select class="form-select py-2 fw-bold text-navy" name="time_slot" required>
+                                    <option value="" disabled selected>Sélectionnez le créneau...</option>
+                                    {% for slot in time_slots %}
+                                        <option value="{{ slot }}">{{ slot }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="d-grid gap-2 mt-4">
-                    <button type="submit" class="btn btn-primary btn-lg">Enregistrer les Absences</button>
+                <div class="step-container p-4 rounded mb-4">
+                    <span class="step-badge">2</span>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                        <h6 class="fw-bold text-navy mb-0 mt-1"><i class="fas fa-door-open me-2 text-gold"></i>Salles Signalées Vides</h6>
+                        
+                        <div class="search-box position-relative">
+                            <i class="fas fa-search position-absolute top-50 translate-middle-y text-muted ms-3"></i>
+                            <input type="text" id="roomSearch" class="form-control form-control-sm rounded-pill ps-5 pe-3 py-2 shadow-sm border-0 bg-light" placeholder="Rechercher une salle..." style="width: 250px;">
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-navy rounded-pill px-3" onclick="toggleAllRooms(true)">
+                            <i class="fas fa-check-double me-1"></i> Tout sélectionner
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="toggleAllRooms(false)">
+                            <i class="fas fa-times me-1"></i> Tout désélectionner
+                        </button>
+                    </div>
+
+                    <div class="room-grid-container p-3 rounded shadow-inner bg-light-gray" style="max-height: 350px; overflow-y: auto;">
+                        <div class="row g-3" id="roomContainer">
+                            {% for room in rooms %}
+                            <div class="col-6 col-sm-4 col-md-3 room-item">
+                                <input class="form-check-input room-checkbox d-none" type="checkbox" name="empty_rooms" value="{{ room }}" id="room_{{ loop.index }}">
+                                <label class="room-card w-100 shadow-sm text-center py-3 px-2 rounded-3 user-select-none" for="room_{{ loop.index }}">
+                                    <div class="room-icon mb-2"><i class="fas fa-chalkboard"></i></div>
+                                    <div class="room-name fw-bold">{{ room }}</div>
+                                    <div class="check-indicator"><i class="fas fa-check-circle"></i></div>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <small class="text-muted"><i class="fas fa-info-circle me-1 text-gold"></i> Cliquez sur une salle pour la marquer comme <strong>vide</strong>.</small>
+                    </div>
+                </div>
+
+                <div class="d-grid mt-5">
+                    <button type="submit" class="btn btn-premium py-3 shadow-lg fs-5">
+                        <i class="fas fa-save me-2"></i> Enregistrer le rapport d'absence
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<style>
+    :root { 
+        --navy: #002147; 
+        --navy-dark: #00152e;
+        --gold: #C5A059; 
+        --light-gray: #f8fafc; 
+    }
+    
+    body { background-color: #f1f5f9; font-family: 'Inter', sans-serif;}
+    
+    .academic-card { border-radius: 20px; overflow: hidden; }
+    
+    .premium-navy-header {
+        background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%);
+        border-bottom: 4px solid var(--gold);
+    }
+    
+    .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+    .shadow-inner { box-shadow: inset 0 2px 10px rgba(0,0,0,0.05); }
+    
+    .icon-circle { 
+        width: 70px; height: 70px; 
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(5px);
+        border: 2px solid rgba(197, 160, 89, 0.5);
+        border-radius: 50%; 
+        display: flex; align-items: center; justify-content: center; font-size: 28px; 
+    }
+    
+    .step-container {
+        background-color: #fdfdfd;
+        border: 1px solid #eef2f6;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        position: relative;
+    }
+
+    .step-badge {
+        position: absolute;
+        top: -12px;
+        left: -12px;
+        background: linear-gradient(135deg, var(--gold), #a3803d);
+        color: white;
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 15px;
+        box-shadow: 0 4px 6px -1px rgba(197, 160, 89, 0.4);
+    }
+
+    .text-gold { color: var(--gold); }
+    .text-navy { color: var(--navy); }
+    .bg-light-gray { background-color: var(--light-gray); }
+    .academic-title { font-family: 'Playfair Display', serif; font-weight: 700; letter-spacing: 0.5px; }
+    .tracking-wide { letter-spacing: 2px; font-weight: 600; }
+    .academic-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #64748b; margin-bottom: 0.5rem; }
+    
+    /* Inputs Styling */
+    .custom-input-group .input-group-text {
+        background-color: white; border-right: none; color: var(--navy); opacity: 0.7;
+    }
+    .custom-input-group .form-control, .custom-input-group .form-select { border-left: none; }
+    .custom-input-group .form-control:focus, .custom-input-group .form-select:focus {
+        border-color: #dee2e6; box-shadow: none;
+    }
+    .custom-input-group:focus-within {
+        box-shadow: 0 0 0 0.25rem rgba(197, 160, 89, 0.25) !important; border-radius: 6px;
+    }
+
+    .search-box input:focus {
+        outline: none; box-shadow: 0 0 0 0.25rem rgba(0, 33, 71, 0.15) !important;
+    }
+
+    /* Buttons */
+    .btn-outline-navy { color: var(--navy); border-color: var(--navy); font-weight: 500; }
+    .btn-outline-navy:hover { background-color: var(--navy); color: white; }
+    
+    .btn-premium { 
+        background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+        color: white; font-weight: 600; border-radius: 12px; border: none; transition: all 0.3s ease; 
+    }
+    .btn-premium:hover { 
+        background: linear-gradient(135deg, var(--gold) 0%, #a3803d 100%);
+        color: white; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(197, 160, 89, 0.3) !important; 
+    }
+
+    /* Custom Room Cards (Toggle effect) */
+    .room-card {
+        background-color: white;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .room-card:hover { transform: translateY(-2px); border-color: rgba(0, 33, 71, 0.2); }
+    
+    .room-icon { font-size: 1.5rem; color: #94a3b8; transition: color 0.2s; }
+    .room-name { color: #334155; font-size: 0.95rem; }
+    .check-indicator {
+        position: absolute; top: -10px; right: -10px;
+        background-color: #ef4444; color: white;
+        width: 30px; height: 30px; border-radius: 50%;
+        display: flex; align-items: flex-end; justify-content: flex-start;
+        padding-bottom: 4px; padding-left: 6px;
+        font-size: 0.7rem; opacity: 0; transform: scale(0.5); transition: all 0.2s;
+    }
+
+    /* Checked State */
+    .room-checkbox:checked + .room-card {
+        background-color: #fef2f2; /* Light red tint for empty room */
+        border-color: #ef4444; /* Red border to indicate alert/empty */
+    }
+    .room-checkbox:checked + .room-card .room-icon { color: #ef4444; }
+    .room-checkbox:checked + .room-card .room-name { color: #b91c1c; }
+    .room-checkbox:checked + .room-card .check-indicator { opacity: 1; transform: scale(1); }
+
+    /* Scrollbar for room grid */
+    .room-grid-container::-webkit-scrollbar { width: 8px; }
+    .room-grid-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+    .room-grid-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .room-grid-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+
+<script>
+    // Filtrage dynamique des salles
+    document.getElementById('roomSearch').addEventListener('input', function() {
+        let filter = this.value.toUpperCase();
+        let roomItems = document.querySelectorAll('.room-item');
+
+        roomItems.forEach(function(item) {
+            let label = item.querySelector('.room-name').textContent;
+            if (label.toUpperCase().indexOf(filter) > -1) {
+                item.style.display = "";
+            } else {
+                item.style.display = "none";
+            }
+        });
+    });
+
+    // Fonction pour tout sélectionner/désélectionner parmi les éléments visibles
+    function toggleAllRooms(check) {
+        let roomItems = document.querySelectorAll('.room-item');
+        roomItems.forEach(function(item) {
+            if (item.style.display !== "none") {
+                item.querySelector('.room-checkbox').checked = check;
+            }
+        });
+    }
+</script>
 {% endblock %}

@@ -1,69 +1,177 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-navy"><i class="fas fa-users me-2"></i>Statistiques des Professeurs</h2>
-        <div class="input-group w-25 shadow-sm">
-            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-            <input type="text" id="pSearch" class="form-control border-start-0" placeholder="Rechercher un professeur...">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --navy: #002147;
+        --soft-gray: #f8fafc;
+        --border-color: #e2e8f0;
+        --p-color: #0ea5e9; 
+        --v-color: #f59e0b; 
+        /* Vibrant Metric Colors */
+        --abs-red: #dc2626;   
+        --ratt-blue: #2563eb;  
+        --comp-green: #059669; 
+        --warn-gold: #d97706;  
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f1f5f9;
+        font-size: 0.82rem; 
+    }
+
+    /* TOP SUMMARY BAR */
+    .summary-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .summary-item { text-align: center; padding: 0.5rem; }
+    .summary-item:not(:last-child) { border-right: 1px solid var(--border-color); }
+
+    .summary-item small { 
+        display: block; 
+        text-transform: uppercase; 
+        letter-spacing: 0.5px; 
+        font-weight: 700;
+        color: #1266db;
+        margin-bottom: 5px;
+    }
+
+    /* Text Colors for Values */
+    .val-comp { color: var(--comp-green) !important; }
+    .val-abs { color: var(--abs-red) !important; }
+    .val-ratt { color: var(--ratt-blue) !important; }
+
+    /* BLACK DYNAMIC BADGE */
+    .count-badge-black {
+        background-color: #000;
+        color: #fff;
+        font-weight: 800;
+        font-size: 0.85rem;
+        padding: 2px 10px;
+        border-radius: 6px;
+        margin-left: 5px;
+    }
+
+    .page-header {
+        background: white;
+        padding: 0.8rem 1.2rem;
+        border-radius: 10px;
+        margin-bottom: 1.2rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .prof-card-compact {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        transition: transform 0.2s ease;
+    }
+    .prof-card-compact:hover { transform: translateY(-2px); }
+
+    .status-indicator { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+    .dot-p { background-color: var(--p-color); }
+    .dot-v { background-color: var(--v-color); }
+
+    .mini-stat {
+        padding: 5px; border-radius: 8px; background: #f8fafc; border: 1px solid #f1f5f9; text-align: center;
+    }
+    .mini-stat label { display: block; font-size: 0.58rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
+    
+    /* Default span style, will be overridden by classes below */
+    .mini-stat span { font-weight: 700; color: #475569; }
+
+    /* PROGRESS BAR COLORS */
+    .bg-custom-success { background-color: var(--comp-green) !important; }
+    .bg-custom-warning { background-color: var(--warn-gold) !important; }
+    .bg-custom-danger { background-color: var(--abs-red) !important; }
+
+    .btn-view {
+        font-size: 0.75rem; font-weight: 600; padding: 6px; border: 1.5px solid var(--navy);
+        color: var(--navy); border-radius: 8px; text-decoration: none; display: block; text-align: center;
+    }
+    .btn-view:hover { background: var(--navy); color: white; }
+</style>
+
+<div class="container-fluid py-3">
+    
+   <div class="summary-bar shadow-sm">
+        <div class="row align-items-center">
+            <div class="col-md-4 summary-item">
+                <small>Global Realization</small>
+                <h3 class="mb-0 fw-bold val-comp">{{ comp_perc }}%</h3>
+            </div>
+            <div class="col-md-4 summary-item">
+                <small>Absence Rate</small>
+                <h3 class="mb-0 fw-bold val-abs">{{ abs_perc }}%</h3>
+                <span class="text-muted" style="font-size: 0.7rem;">(Total: {{ total_abs }}h)</span>
+            </div>
+            <div class="col-md-4 summary-item">
+                <small>Rattrapage Rate</small>
+                <h3 class="mb-0 fw-bold val-ratt">{{ ratt_perc }}%</h3>
+                <span class="text-muted" style="font-size: 0.7rem;">(Total: {{ total_ratt }}h)</span>
+            </div>
         </div>
     </div>
 
-    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4" id="pGrid">
+    <div class="page-header d-flex justify-content-between align-items-center shadow-sm">
+        <h6 class="fw-700 text-navy mb-0">
+            Professors List 
+            <span id="dynamicCount" class="count-badge-black">{{ data|length }}</span>
+        </h6>
+        <div class="d-flex gap-2">
+            <select id="typeFilter" class="form-select form-select-sm" style="width: 130px; border-radius: 8px;">
+                <option value="ALL">All Status</option>
+                <option value="Permanent">Permanent</option>
+                <option value="Vacataire">Vacataire</option>
+            </select>
+            <input type="text" id="pSearch" class="form-control form-control-sm" style="width: 180px; border-radius: 8px;" placeholder="Search name...">
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3" id="pGrid">
         {% for p in data %}
-        <div class="col prof-card">
-            <div class="card h-100 shadow-sm border-0 transition-hover">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="rounded-circle bg-light p-3 me-3">
-                            <i class="fas fa-chalkboard-teacher fa-lg text-navy"></i>
-                        </div>
-                        <h5 class="card-title mb-0 text-navy fw-bold">{{ p.name }}</h5>
-                    </div>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <div class="p-2 border rounded bg-light text-center">
-                                <small class="text-muted d-block">Prévu</small>
-                                <span class="fw-bold">{{ p.theo }}h</span>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-2 border rounded bg-light text-center">
-                                <small class="text-muted d-block text-danger">Absences</small>
-                                <span class="fw-bold text-danger">-{{ p.abs }}h</span>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-2 border rounded bg-light text-center">
-                                <small class="text-muted d-block text-primary">Rattrapage</small>
-                                <span class="fw-bold text-primary">+{{ p.ratt }}h</span>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-2 border rounded bg-light text-center">
-                                <small class="text-muted d-block text-success">Réalisé</small>
-                                <span class="fw-bold text-success">{{ p.real }}h</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {% set perc = (p.real / p.theo * 100) if p.theo > 0 else 0 %}
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="text-muted">Progression</small>
-                        <small class="fw-bold">{{ perc|round|int }}%</small>
-                    </div>
-                    <div class="progress" style="height: 10px;">
-                        <div class="progress-bar {% if perc < 50 %}bg-danger{% elif perc < 80 %}bg-warning{% else %}bg-success{% endif %}" 
-                             role="progressbar" style="width: {{ perc }}%"></div>
+        <div class="col prof-card" data-status="{{ p.status }}">
+            <div class="prof-card-compact p-3 h-100 d-flex flex-column">
+                
+                <div class="d-flex align-items-center mb-3">
+                    <div class="status-indicator {% if 'Permanent' in p.status %}dot-p{% else %}dot-v{% endif %}" title="{{ p.status }}"></div>
+                    <div class="overflow-hidden">
+                        <h6 class="mb-0 fw-700 text-navy text-truncate" style="font-size: 0.85rem;">{{ p.name }}</h6>
+                        <small class="text-muted d-block fw-600" style="font-size: 0.65rem; margin-top: 3px;">{{ p.status }}</small>
                     </div>
                 </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6"><div class="mini-stat"><label>Planned</label><span>{{ p.theo }}h</span></div></div>
+                    <div class="col-6"><div class="mini-stat"><label class="val-abs">Absence</label><span class="val-abs">{{ p.abs }}h</span></div></div>
+                    <div class="col-6"><div class="mini-stat"><label class="val-ratt">Ratt</label><span class="val-ratt">{{ p.ratt }}h</span></div></div>
+                    <div class="col-6"><div class="mini-stat"><label class="val-comp">Total</label><span class="val-comp">{{ p.real }}h</span></div></div>
+                </div>
+
+                {% set theo_h = p.theo | float %}
+                {% set real_h = p.real | float %}
+                {% set perc = (real_h / theo_h * 100) if theo_h > 0 else 0 %}
                 
-                <div class="card-footer bg-transparent border-0 pb-3">
-                    <a href="{{ url_for('professor_details', prof_name=p.name) }}" class="btn btn-outline-navy btn-sm w-100">
-                        <i class="fas fa-file-invoice me-1"></i> Voir les détails
-                    </a>
+                <div class="d-flex justify-content-between mb-1" style="font-size: 0.65rem;">
+                    <span class="fw-600 text-muted">Progress</span>
+                    <span class="fw-700 text-navy">{{ perc|round|int }}%</span>
+                </div>
+                <div class="progress" style="height: 6px; border-radius: 10px; background: #f1f5f9;">
+                    <div class="progress-bar {% if perc < 40 %}bg-custom-danger{% elif perc < 80 %}bg-custom-warning{% else %}bg-custom-success{% endif %}" 
+                         style="width: {{ perc }}%; min-width: 2px;"></div>
+                </div>
+
+                <div class="mt-3">
+                    <a href="{{ url_for('professor_details', prof_name=p.name) }}" class="btn-view">View Records</a>
                 </div>
             </div>
         </div>
@@ -71,33 +179,34 @@
     </div>
 </div>
 
-<style>
-    .text-navy { color: #002147; }
-    .btn-outline-navy { color: #002147; border-color: #002147; }
-    .btn-outline-navy:hover { background-color: #002147; color: white; }
-    
-    .transition-hover {
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .transition-hover:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
-    }
-</style>
-
 <script>
-    document.getElementById('pSearch').onkeyup = function() {
-        let val = this.value.toUpperCase();
-        let cards = document.querySelectorAll(".prof-card");
-        
+    const pSearch = document.getElementById('pSearch');
+    const typeFilter = document.getElementById('typeFilter');
+    const dynamicCount = document.getElementById('dynamicCount');
+
+    function filterData() {
+        const nameVal = pSearch.value.toUpperCase();
+        const typeVal = typeFilter.value;
+        const cards = document.querySelectorAll(".prof-card");
+        let count = 0;
+
         cards.forEach(card => {
-            let name = card.querySelector(".card-title").textContent.toUpperCase();
-            if (name.includes(val)) {
+            const name = card.querySelector("h6").textContent.toUpperCase();
+            const status = card.getAttribute("data-status");
+            const matchesSearch = name.includes(nameVal);
+            const matchesType = (typeVal === "ALL" || status === typeVal);
+            
+            if (matchesSearch && matchesType) {
                 card.style.display = "";
+                count++;
             } else {
                 card.style.display = "none";
             }
         });
+        dynamicCount.textContent = count;
     }
+
+    pSearch.addEventListener('keyup', filterData);
+    typeFilter.addEventListener('change', filterData);
 </script>
 {% endblock %}

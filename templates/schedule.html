@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    
+    <div class="mb-4">
+        <h2 class="fw-bold text-navy"><i class="fas fa-calendar-alt me-2"></i>Explorateur d'Emplois du Temps</h2>
+        <p class="text-muted">Recherchez les planifications par classe, professeur ou module. Cliquez sur l'icône stylo pour modifier, ou sur le <span class="text-success fw-bold">+</span> pour ajouter une séance.</p>
+    </div>
+
+    <ul class="nav nav-tabs mb-4 border-bottom-0" id="scheduleTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link custom-tab {% if search_type == 'classe' or not search_type %}active{% endif %}" id="classe-tab" data-bs-toggle="tab" data-bs-target="#classe" type="button" role="tab">
+                <i class="fas fa-users me-2"></i>Par Classe
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link custom-tab {% if search_type == 'prof' %}active{% endif %}" id="prof-tab" data-bs-toggle="tab" data-bs-target="#prof" type="button" role="tab">
+                <i class="fas fa-user-tie me-2"></i>Par Professeur
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link custom-tab {% if search_type == 'module' %}active{% endif %}" id="module-tab" data-bs-toggle="tab" data-bs-target="#module" type="button" role="tab">
+                <i class="fas fa-book me-2"></i>Par Module
+            </button>
+        </li>
+    </ul>
+
+    <div class="card shadow-sm border-0 mb-4 bg-white">
+        <div class="card-body p-4">
+            <div class="tab-content" id="scheduleTabsContent">
+                
+                <div class="tab-pane fade {% if search_type == 'classe' or not search_type %}show active{% endif %}" id="classe" role="tabpanel">
+                    <form method="GET" action="{{ url_for('view_schedule') }}" class="row g-3 align-items-end">
+                        <input type="hidden" name="search_type" value="classe">
+                        
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Filière</label>
+                            <select name="filiere" class="form-select bg-light fw-bold text-dark" required>
+                                <option value="" disabled {% if not selected_filiere %}selected{% endif %}>Filière...</option>
+                                {% for f in filieres %}
+                                <option value="{{ f }}" {% if selected_filiere == f %}selected{% endif %}>{{ f }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Semestre</label>
+                            <select name="semestre" class="form-select bg-light fw-bold text-dark" required>
+                                <option value="" disabled {% if not selected_semestre %}selected{% endif %}>Semestre...</option>
+                                {% for s in semestres %}
+                                <option value="{{ s }}" {% if selected_semestre == s %}selected{% endif %}>S{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Groupe</label>
+                            <select name="groupe" class="form-select bg-light fw-bold text-dark">
+                                <option value="ALL" {% if not selected_groupe or selected_groupe == 'ALL' %}selected{% endif %}>Vue globale</option>
+                                {% for g in groupes %}
+                                <option value="{{ g }}" {% if selected_groupe == g %}selected{% endif %}>{{ g }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-navy w-100 fw-bold py-2"><i class="fas fa-search me-2"></i> Afficher</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade {% if search_type == 'prof' %}show active{% endif %}" id="prof" role="tabpanel">
+                    <form method="GET" action="{{ url_for('view_schedule') }}" class="row g-3 align-items-end">
+                        <input type="hidden" name="search_type" value="prof">
+                        <div class="col-md-9">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Nom de l'enseignant</label>
+                            <select name="professeur" class="form-select bg-light fw-bold text-dark" required>
+                                <option value="" disabled {% if not selected_prof %}selected{% endif %}>Sélectionnez un professeur...</option>
+                                {% for p in professeurs %}
+                                <option value="{{ p }}" {% if selected_prof == p %}selected{% endif %}>{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-navy w-100 fw-bold py-2"><i class="fas fa-search me-2"></i> Afficher</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade {% if search_type == 'module' %}show active{% endif %}" id="module" role="tabpanel">
+                    <form method="GET" action="{{ url_for('view_schedule') }}" class="row g-3 align-items-end">
+                        <input type="hidden" name="search_type" value="module">
+                        <div class="col-md-9">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Nom du Module</label>
+                            <select name="module" class="form-select bg-light fw-bold text-dark" required>
+                                <option value="" disabled {% if not selected_module %}selected{% endif %}>Sélectionnez un module...</option>
+                                {% for m in modules %}
+                                <option value="{{ m }}" {% if selected_module == m %}selected{% endif %}>{{ m }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-navy w-100 fw-bold py-2"><i class="fas fa-search me-2"></i> Afficher</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    {% if schedule_title %}
+        {% if has_data or (search_type == 'classe' and selected_filiere) %}
+        <div class="card shadow-sm border-0 bg-white">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-navy">
+                    <i class="fas fa-chalkboard me-2"></i> {{ schedule_title }}
+                </h5>
+                <button onclick="window.print()" class="btn btn-sm btn-outline-secondary d-print-none fw-bold">
+                    <i class="fas fa-print me-1"></i> Imprimer
+                </button>
+            </div>
+            
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered text-center align-middle mb-0" style="table-layout: fixed; min-width: 1000px;">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th class="py-3 bg-light border-bottom" style="width: 120px;">Horaires</th>
+                                {% for jour in jours %}
+                                <th class="py-3 bg-light border-bottom">{{ jour }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for heure in time_slots %}
+                            <tr>
+                                <td class="py-3 fw-bold text-navy bg-light border-end">
+                                    <i class="far fa-clock text-muted mb-1 d-block"></i>
+                                    {{ heure }}
+                                </td>
+                                
+                                {% for jour in jours %}
+                                <td class="p-2 align-top position-relative hover-bg-light">
+                                    {% set cours_liste = grid[heure][jour] %}
+                                    
+                                    {% if cours_liste|length > 0 %}
+                                        <div class="d-flex flex-column gap-2">
+                                            {% for cours in cours_liste %}
+                                            <div class="card border border-primary border-opacity-25 shadow-none text-start bg-white h-100 position-relative">
+                                                
+                                                <button onclick="openEditModal('{{ cours.id }}', '{{ cours.Professeur|escape }}', '{{ cours.Module|escape }}', '{{ jour }} à {{ heure }} ({{ cours.Salle }})')" 
+                                                        class="btn btn-sm btn-link text-muted p-0 position-absolute top-0 end-0 mt-1 me-2 d-print-none edit-btn" 
+                                                        title="Modifier le professeur ou le module">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </button>
+
+                                                <div class="card-body p-2 pt-3">
+                                                    {% if search_type == 'prof' %}
+                                                        <div class="fw-bold text-navy mb-1 pe-3" style="font-size: 0.85rem;">{{ cours.Module }}</div>
+                                                        <div class="text-muted mb-2" style="font-size: 0.75rem;"><i class="fas fa-graduation-cap me-1"></i>{{ cours.Filiere }} (S{{ cours.Semestre }})</div>
+                                                    {% elif search_type == 'module' %}
+                                                        <div class="fw-bold text-navy mb-1 pe-3" style="font-size: 0.85rem;"><i class="fas fa-user-tie me-1"></i>{{ cours.Professeur }}</div>
+                                                        <div class="text-muted mb-2" style="font-size: 0.75rem;">{{ cours.Filiere }} (S{{ cours.Semestre }})</div>
+                                                    {% else %}
+                                                        <div class="fw-bold text-navy mb-1 pe-3" style="font-size: 0.85rem;">{{ cours.Module }}</div>
+                                                        <div class="text-muted mb-2" style="font-size: 0.75rem;"><i class="fas fa-user-tie me-1"></i>{{ cours.Professeur }}</div>
+                                                    {% endif %}
+
+                                                    <div class="d-flex justify-content-between align-items-center mt-auto">
+                                                        <span class="badge bg-light text-dark border"><i class="fas fa-door-open text-muted me-1"></i>{{ cours.Salle or 'N/A' }}</span>
+                                                        {% if cours.groupe %}
+                                                        <span class="badge bg-navy text-white">Gr: {{ cours.groupe }}</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        
+                                        <div class="mt-2 text-center d-print-none">
+                                            <button onclick="openAddModal('{{ jour }}', '{{ heure }}')" class="btn btn-sm btn-link text-success p-0 text-decoration-none" style="font-size: 0.75rem;">
+                                                <i class="fas fa-plus-circle me-1"></i>Ajouter un cours ici
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <div class="d-flex justify-content-center align-items-center h-100 opacity-50">
+                                            <button onclick="openAddModal('{{ jour }}', '{{ heure }}')" class="btn btn-outline-success border-0 rounded-circle d-print-none" style="width: 40px; height: 40px;" title="Ajouter une séance">
+                                                <i class="fas fa-plus fa-lg"></i>
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-warning shadow-sm border-0 d-flex align-items-center p-4 bg-white" role="alert">
+            <i class="fas fa-info-circle fa-2x text-warning me-3"></i>
+            <div>
+                <h5 class="alert-heading fw-bold mb-1">Aucun cours trouvé</h5>
+                <p class="mb-0 text-muted">Il n'y a pas de planification enregistrée pour ces critères. Vous pouvez utiliser la recherche par classe pour construire un emploi du temps à partir de zéro.</p>
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<div class="modal fade" id="editScheduleModal" tabindex="-1" aria-labelledby="editScheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header text-white" style="background-color: #002b5e;">
+                <h5 class="modal-title fw-bold" id="editScheduleModalLabel"><i class="fas fa-edit me-2"></i>Modifier la Séance</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('edit_schedule') }}" method="POST">
+                <div class="modal-body p-4 bg-light">
+                    <input type="hidden" name="slot_id" id="modal_slot_id">
+                    
+                    <div class="mb-3 text-center">
+                        <span class="badge bg-secondary mb-2 px-3 py-2" id="modal_time_room" style="font-size: 0.85rem;">Jour - Heure - Salle</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Professeur Assigné</label>
+                        <input type="text" class="form-control fw-bold text-navy shadow-sm" name="new_prof" id="modal_prof_name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Module / Matière</label>
+                        <input type="text" class="form-control shadow-sm" name="new_module" id="modal_module">
+                    </div>
+                    
+                    <div class="alert alert-warning py-2 small mb-0 mt-4 border-0">
+                        <i class="fas fa-exclamation-triangle me-1"></i> Cette modification affectera l'emploi du temps pour tout le reste du semestre et mettra à jour la base de données.
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-top-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-navy text-white px-4" style="background-color: #002b5e;">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addScheduleModal" tabindex="-1" aria-labelledby="addScheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header text-white" style="background-color: #059669;">
+                <h5 class="modal-title fw-bold" id="addScheduleModalLabel"><i class="fas fa-plus-circle me-2"></i>Ajouter une Séance</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('add_schedule') }}" method="POST">
+                <div class="modal-body p-4 bg-light">
+                    <input type="hidden" name="jour" id="add_jour">
+                    <input type="hidden" name="heure" id="add_heure">
+                    
+                    <div class="mb-3 text-center">
+                        <span class="badge bg-success mb-2 px-3 py-2" id="modal_add_time" style="font-size: 0.85rem;">Jour - Heure</span>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Filière *</label>
+                            <input type="text" class="form-control" name="filiere" id="add_filiere" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Semestre *</label>
+                            <input type="number" class="form-control" name="semestre" id="add_semestre" required>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Groupe</label>
+                            <input type="text" class="form-control" name="groupe" id="add_groupe" placeholder="ex: 1">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Salle</label>
+                            <input type="text" class="form-control" name="salle" placeholder="ex: Salle 3">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Professeur *</label>
+                        <input type="text" class="form-control fw-bold text-navy" name="prof" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Module / Matière</label>
+                        <input type="text" class="form-control" name="module">
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-top-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-success px-4">Créer la séance</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-navy { color: #002b5e !important; }
+    .bg-navy { background-color: #002b5e !important; }
+    .btn-navy { background-color: #002b5e; color: #ffffff; border: none; }
+    .btn-navy:hover { background-color: #001a38; color: #ffffff; }
+    
+    .custom-tab {
+        color: #6c757d; font-weight: 600; padding: 12px 20px; border: none; border-bottom: 3px solid transparent; border-radius: 0; background: transparent;
+    }
+    .custom-tab:hover { color: #002b5e; border-color: #e2e8f0; }
+    .custom-tab.active { color: #002b5e !important; border-bottom: 3px solid #002b5e !important; background: transparent !important; }
+
+    .hover-bg-light:hover { background-color: #f8f9fa; }
+    .table-responsive::-webkit-scrollbar { height: 8px; }
+    .table-responsive::-webkit-scrollbar-track { background: #f8f9fa; }
+    .table-responsive::-webkit-scrollbar-thumb { background: #dee2e6; border-radius: 4px; }
+
+    .edit-btn:hover { color: #002b5e !important; transform: scale(1.1); }
+    .btn-outline-success:hover { background-color: #059669; color: white; }
+
+    @media print {
+        body { background-color: #fff !important; }
+        .sidebar, .navbar, .nav-tabs, form, .d-print-none { display: none !important; }
+        .container-fluid { padding: 0 !important; }
+        .card { border: none !important; box-shadow: none !important; }
+        .table { font-size: 10px; }
+    }
+</style>
+
+<script>
+    // 1. Remplissage du Pop-up de MODIFICATION
+    function openEditModal(slotId, profName, moduleName, dayInfo) {
+        document.getElementById('modal_slot_id').value = slotId;
+        document.getElementById('modal_prof_name').value = profName;
+        document.getElementById('modal_module').value = moduleName;
+        document.getElementById('modal_time_room').innerText = dayInfo;
+        
+        var editModal = new bootstrap.Modal(document.getElementById('editScheduleModal'));
+        editModal.show();
+    }
+
+    // 2. Remplissage du Pop-up d'AJOUT
+    function openAddModal(jour, heure) {
+        document.getElementById('add_jour').value = jour;
+        document.getElementById('add_heure').value = heure;
+        document.getElementById('modal_add_time').innerText = jour + " de " + heure;
+
+        // Astuce : On pré-remplit les champs si l'utilisateur fait déjà une recherche par classe
+        document.getElementById('add_filiere').value = "{{ selected_filiere or '' }}";
+        document.getElementById('add_semestre').value = "{{ selected_semestre or '' }}";
+        let grp = "{{ selected_groupe or '' }}";
+        document.getElementById('add_groupe').value = (grp === 'ALL') ? '' : grp;
+        
+        var addModal = new bootstrap.Modal(document.getElementById('addScheduleModal'));
+        addModal.show();
+    }
+</script>
+{% endblock %}
