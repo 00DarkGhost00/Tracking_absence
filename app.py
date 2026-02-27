@@ -84,10 +84,84 @@ def get_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT, date_ratt TEXT, Professeur TEXT, Lheure TEXT)""")
     return db
 
+
+
 @app.teardown_appcontext
 def close_connection(e):
     db = getattr(g, '_database', None)
     if db is not None: db.close()
+
+
+# =======================================================
+# GESTION DES DONNÉES DE BASE (LE COEUR DE L'APPLICATION)
+# =======================================================
+
+def init_core_tables():
+    db = get_db()
+    db.execute("CREATE TABLE IF NOT EXISTS Filieres (nom TEXT PRIMARY KEY)")
+    db.execute("CREATE TABLE IF NOT EXISTS Semestres (nom TEXT PRIMARY KEY)")
+    db.execute("CREATE TABLE IF NOT EXISTS Modules (nom TEXT PRIMARY KEY)")
+    db.execute("CREATE TABLE IF NOT EXISTS Groupes (nom TEXT PRIMARY KEY)")
+    # La table Professors existe déjà normalement, mais on s'en assure :
+    db.execute("CREATE TABLE IF NOT EXISTS Professors (name TEXT PRIMARY KEY, status TEXT DEFAULT 'Vacataire')")
+    db.commit()
+
+@app.route('/donnees')
+@login_required
+def manage_donnees():
+    init_core_tables()
+    db = get_db()
+    filieres = db.execute("SELECT nom FROM Filieres ORDER BY nom").fetchall()
+    semestres = db.execute("SELECT nom FROM Semestres ORDER BY nom").fetchall()
+    modules = db.execute("SELECT nom FROM Modules ORDER BY nom").fetchall()
+    groupes = db.execute("SELECT nom FROM Groupes ORDER BY nom").fetchall()
+    professeurs = db.execute("SELECT name, status FROM Professors ORDER BY name").fetchall()
+    
+    return render_template('donnees.html', 
+                           filieres=filieres, semestres=semestres, 
+                           modules=modules, groupes=groupes, professeurs=professeurs)
+
+@app.route('/add_donnee', methods=['POST'])
+@login_required
+def add_donnee():
+    db = get_db()
+    type_donnee = request.form.get('type')
+    valeur = request.form.get('valeur', '').strip()
+    status = request.form.get('status', 'Vacataire') # Utilisé uniquement pour les profs
+
+    if not valeur:
+        flash("La valeur ne peut pas être vide.", "warning")
+        return redirect(url_for('manage_donnees'))
+
+    try:
+        if type_donnee == 'Filiere': db.execute("INSERT INTO Filieres (nom) VALUES (?)", (valeur,))
+        elif type_donnee == 'Semestre': db.execute("INSERT INTO Semestres (nom) VALUES (?)", (valeur,))
+        elif type_donnee == 'Module': db.execute("INSERT INTO Modules (nom) VALUES (?)", (valeur,))
+        elif type_donnee == 'Groupe': db.execute("INSERT INTO Groupes (nom) VALUES (?)", (valeur,))
+        elif type_donnee == 'Professeur': db.execute("INSERT INTO Professors (name, status) VALUES (?, ?)", (valeur, status))
+        db.commit()
+        flash(f"{valeur} a été ajouté avec succès aux {type_donnee}s.", "success")
+    except Exception as e: # Souvent une erreur d'intégrité si l'élément existe déjà
+        flash(f"Erreur : '{valeur}' existe déjà dans la liste des {type_donnee}s.", "danger")
+    
+    return redirect(url_for('manage_donnees'))
+
+@app.route('/delete_donnee/<type_donnee>/<valeur>', methods=['POST'])
+@login_required
+def delete_donnee(type_donnee, valeur):
+    db = get_db()
+    try:
+        if type_donnee == 'Filiere': db.execute("DELETE FROM Filieres WHERE nom = ?", (valeur,))
+        elif type_donnee == 'Semestre': db.execute("DELETE FROM Semestres WHERE nom = ?", (valeur,))
+        elif type_donnee == 'Module': db.execute("DELETE FROM Modules WHERE nom = ?", (valeur,))
+        elif type_donnee == 'Groupe': db.execute("DELETE FROM Groupes WHERE nom = ?", (valeur,))
+        elif type_donnee == 'Professeur': db.execute("DELETE FROM Professors WHERE name = ?", (valeur,))
+        db.commit()
+        flash(f"{valeur} a été retiré des {type_donnee}s.", "success")
+    except Exception as e:
+        flash("Erreur lors de la suppression.", "danger")
+    
+    return redirect(url_for('manage_donnees'))
 
 # --- STATS LOGIC ---
 def get_stats_for_prof(prof_name):
@@ -220,7 +294,9 @@ def dashboard():
     taux_recup = round((total_rattrapages / total_absences * 100)) if total_absences > 0 else 0
 
     # 4. Absences Récentes
-    recent_absences = db.execute("SELECT * FROM AbsenceRecords ORDER BY id DESC LIMIT 20").fetchall()
+    recent_absences = db.execute('''
+                    SELECT * FROM AbsenceRecords ORDER BY date_absent DESC, Lheure DESC
+        LIMIT 500''').fetchall()
 
     return render_template('dashboard.html', 
                            top_prof=top_prof, 
@@ -230,6 +306,29 @@ def dashboard():
                            total_rattrapages=total_rattrapages,
                            taux_recup=taux_recup,
                            recent_absences=recent_absences)
+
+
+# 2. AJOUTEZ CETTE NOUVELLE ROUTE POUR LA SUPPRESSION MULTIPLE
+@app.route('/delete_multiple_absences', methods=['POST'])
+@login_required
+def delete_multiple_absences():
+    db = get_db()
+    absence_ids = request.form.getlist('absence_ids')
+    
+    if not absence_ids:
+        flash("Aucune absence sélectionnée pour la suppression.", "warning")
+        return redirect(request.referrer)
+        
+    try:
+        # Création des '?' pour la requête SQL en fonction du nombre d'IDs
+        placeholders = ','.join(['?'] * len(absence_ids))
+        db.execute(f"DELETE FROM AbsenceRecords WHERE id IN ({placeholders})", absence_ids)
+        db.commit()
+        flash(f"{len(absence_ids)} absence(s) supprimée(s) avec succès.", "success")
+    except Exception as e:
+        flash(f"Erreur lors de la suppression : {str(e)}", "danger")
+        
+    return redirect(request.referrer)
 
 
 # FIX 1: Calcule Theorical Time and Delete Holidays from it 
@@ -420,24 +519,29 @@ def toggle_status(name):
 
 # --- NOUVELLE API POUR LES SALLES LIBRES  & Modules ---
 # --- API MISE À JOUR : SALLES HABITUELLES + SALLES LIBRES ---
+
 @app.route('/api/available_rooms')
 @login_required
 def available_rooms():
     db = get_db()
     date_str = request.args.get('date')
+    day_name = request.args.get('day')
     time_slot = request.args.get('time_slot')
-    prof = request.args.get('prof', '')
-    module = request.args.get('module', '')
+    prof = request.args.get('prof', '').strip()
+    module = request.args.get('module', '').strip()
 
-    if not date_str or not time_slot:
+    if not time_slot:
         return jsonify({'usual': [], 'available': []})
 
     try:
-        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
-        days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
-        day_of_week = days[date_obj.weekday()]
+        if date_str:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+            days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+            day_of_week = days[date_obj.weekday()]
+        else:
+            day_of_week = day_name
 
-        # 1. Salles habituelles (basées sur ce professeur ET ce module exact)
+        # 1. Salles habituelles (Usual rooms)
         usual_rooms = []
         if prof and module:
             u_res = db.execute("SELECT DISTINCT Salle FROM MasterSchedule WHERE Professeur = ? AND Module = ? AND Salle IS NOT NULL AND Salle != ''", (prof, module)).fetchall()
@@ -447,18 +551,38 @@ def available_rooms():
         all_rooms_query = db.execute("SELECT DISTINCT Salle FROM MasterSchedule WHERE Salle IS NOT NULL AND Salle != ''").fetchall()
         all_rooms = {r['Salle'] for r in all_rooms_query}
 
-        # 3. Salles occupées (Emploi du temps normal)
-        occ_ms = db.execute("SELECT Salle FROM MasterSchedule WHERE Jour = ? AND Lheure = ?", (day_of_week, time_slot)).fetchall()
-        occupied = {r['Salle'] for r in occ_ms if r['Salle']}
+        # 3. Récupération des occupations (Emploi du temps + Rattrapages)
+        occ_ms = db.execute("SELECT Salle, Professeur, Module FROM MasterSchedule WHERE Jour = ? AND Lheure = ?", (day_of_week, time_slot)).fetchall()
         
-        # NOUVEAU : Salles occupées par d'autres RATTRAPAGES ce jour-là !
-        occ_ratt = db.execute("SELECT Salle FROM RattSessions WHERE date_ratt = ? AND Lheure = ?", (date_str, time_slot)).fetchall()
-        for r in occ_ratt:
+        occupied = set()
+        virtual_rooms = set()
+
+        poly_1 = ['Ployvalente 1', 'Polyvalente 1']
+        poly_2 = ['Ployvalente 2', 'Polyvalente 2']
+
+        # Fonction qui vérifie les conflits et débloque P-1 ou P-2 si nécessaire
+        def check_polyvalente(r):
             if r['Salle']:
                 occupied.add(r['Salle'])
+                # Si c'est la Polyvalente 1, occupée par le MÊME prof et MÊME module, on débloque P-1
+                if r['Salle'] in poly_1 and r['Professeur'] == prof and r['Module'] == module:
+                    virtual_rooms.add('P-1')
+                # Si c'est la Polyvalente 2, occupée par le MÊME prof et MÊME module, on débloque P-2
+                if r['Salle'] in poly_2 and r['Professeur'] == prof and r['Module'] == module:
+                    virtual_rooms.add('P-2')
 
-        # 4. Salles libres (Toutes - Occupées)
-        available = sorted(list(all_rooms - occupied))
+        # Appliquer la vérification sur l'emploi du temps régulier
+        for r in occ_ms:
+            check_polyvalente(r)
+
+        # Appliquer la vérification sur les rattrapages déjà programmés ce jour-là
+        if date_str:
+            occ_ratt = db.execute("SELECT Salle, Professeur, Module FROM RattSessions WHERE date_ratt = ? AND Lheure = ?", (date_str, time_slot)).fetchall()
+            for r in occ_ratt:
+                check_polyvalente(r)
+
+        # 4. Calcul Final : (Toutes les Salles existantes + Salles Virtuelles Débloquées) - Salles Occupées
+        available = sorted(list((all_rooms | virtual_rooms) - occupied))
         
         return jsonify({'usual': usual_rooms, 'available': available})
     except Exception as e:
@@ -486,6 +610,22 @@ def prof_modules():
     except Exception as e:
         print("Erreur API Modules:", e)
         return jsonify([])
+    
+# --- 1. API MODULES Par Filiére ---
+@app.route('/api/modules_by_filiere')
+@login_required
+def get_modules_by_filiere():
+    filiere = request.args.get('filiere', '')
+    semestre = request.args.get('semestre', '')
+    db = get_db()
+    
+    if filiere and semestre:
+        # Cherche tous les modules associés à cette filière et ce semestre dans la base
+        query = "SELECT DISTINCT Module FROM MasterSchedule WHERE Filiere = ? AND Semestre = ? AND Module != ''"
+        modules = [row['Module'] for row in db.execute(query, (filiere, semestre)).fetchall()]
+        return jsonify(modules)
+    
+    return jsonify([])
 
 # --- 2. MISE À JOUR DE PROCESS_RATT ---
 @app.route('/process_ratt', methods=['POST'])
@@ -511,15 +651,21 @@ def process_ratt():
     module_name = parts[2] if len(parts) > 2 else ""
     groupe = parts[3] if len(parts) > 3 else ""
 
-    # --- NOUVEAU : ANTI DOUBLE-BOOKING ---
+    # DOUBLE-BOOKING AVEC EXCEPTION P-1 / P-2 ---
     
     # Vérification 1 : Le professeur a-t-il déjà un rattrapage à cette heure ?
-    conflit_prof = db.execute("SELECT * FROM RattSessions WHERE Professeur = ? AND date_ratt = ? AND Lheure = ?", (prof, date_ratt, time_slot)).fetchone()
-    if conflit_prof:
-        flash(f"Erreur : Le professeur {prof} a déjà un rattrapage programmé le {date_ratt} de {time_slot}.", "danger")
-        return redirect(url_for('ratt_session'))
+    prof_ratts = db.execute("SELECT * FROM RattSessions WHERE Professeur = ? AND date_ratt = ? AND Lheure = ?", (prof, date_ratt, time_slot)).fetchall()
+    
+    for r in prof_ratts:
+        # EXCEPTION : Si la salle choisie est P-1 ou P-2, ET que le module est identique, on autorise
+        if salle in ['P-1', 'P-2'] and r['Module'] == module_name:
+            continue # On ignore ce conflit et on passe à la suite
+        else:
+            flash(f"Erreur : Le professeur {prof} a déjà un rattrapage programmé le {date_ratt} de {time_slot}.", "danger")
+            return redirect(url_for('ratt_session'))
 
     # Vérification 2 : La salle est-elle déjà prise par un AUTRE rattrapage ?
+    # (Cela protègera aussi P-1 et P-2 d'être utilisées plus d'une fois !)
     if salle:
         conflit_salle = db.execute("SELECT * FROM RattSessions WHERE Salle = ? AND date_ratt = ? AND Lheure = ?", (salle, date_ratt, time_slot)).fetchone()
         if conflit_salle:
@@ -594,6 +740,8 @@ def auto_assign_status():
         
     return redirect(url_for('prof_status'))
 
+
+# Sauvgarder et Recupérer la base de données
 @app.route('/export_db')
 @login_required
 def export_db():
@@ -611,6 +759,7 @@ def restore_db():
             return redirect(url_for('manage_data'))
     return "Invalid file", 400
 
+# --- NOUVELLE API POUR TRAITER LES ABSENCES EN FONCTION DES SALLES LIBRES ---
 @app.route('/process_absence', methods=['POST'])
 @login_required
 def process_absence():
@@ -621,21 +770,52 @@ def process_absence():
 
     if not date_str or not time_slot or not empty_rooms:
         flash("Veuillez remplir tous les champs et sélectionner au moins une salle.", "warning")
-        return redirect(url_for('index')) 
+        return redirect(request.referrer or url_for('index'))
 
     date_obj = datetime.strptime(date_str, '%Y-%m-%d')
     days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
     day_of_week = days[date_obj.weekday()]
 
-    count = 0
+    count_new = 0
+    count_exist = 0
+    rooms_with_no_class = []
+
     for room in empty_rooms:
+        # RECHERCHE 1 : Dans l'emploi du temps normal (MasterSchedule)
+        # TRIM et NOCASE garantissent qu'on ignore les différences d'espaces ou de majuscules
         schedule_entries = db.execute('''
             SELECT Professeur, Semestre, Filiere, Groupe, Module 
             FROM MasterSchedule 
-            WHERE Jour = ? AND Lheure = ? AND Salle = ?
-        ''', (day_of_week, time_slot, room)).fetchall()
+            WHERE TRIM(Jour) COLLATE NOCASE = ? 
+              AND TRIM(Lheure) = ? 
+              AND TRIM(Salle) COLLATE NOCASE = ?
+        ''', (day_of_week.strip(), time_slot.strip(), room.strip())).fetchall()
 
-        for entry in schedule_entries:
+        # RECHERCHE 2 : Dans les rattrapages ! (Un prof peut être absent à son rattrapage)
+        ratt_entries = []
+        try:
+            # Note: Dans votre table RattSessions, la colonne s'appelle souvent 'groupe' en minuscule
+            ratt_entries = db.execute('''
+                SELECT Professeur, Semestre, Filiere, groupe AS Groupe, Module 
+                FROM RattSessions 
+                WHERE date_ratt = ? 
+                  AND TRIM(Lheure) = ? 
+                  AND TRIM(Salle) COLLATE NOCASE = ?
+            ''', (date_str, time_slot.strip(), room.strip())).fetchall()
+        except:
+            pass # Si la table RattSessions est vide ou n'a pas les mêmes colonnes, on ignore sans crasher
+
+        # On combine les cours normaux et les rattrapages trouvés pour cette salle
+        all_entries = schedule_entries + ratt_entries
+
+        # SI AUCUN COURS N'EST PRÉVU DANS CETTE SALLE :
+        if not all_entries:
+            rooms_with_no_class.append(room)
+            continue
+
+        # SI UN (OU PLUSIEURS) COURS SONT PRÉVUS :
+        for entry in all_entries:
+            # On vérifie si l'absence n'a pas déjà été enregistrée pour ce prof aujourd'hui
             existing = db.execute('''
                 SELECT id FROM AbsenceRecords 
                 WHERE date_absent = ? AND Lheure = ? AND Salle = ? AND Professeur = ?
@@ -648,11 +828,26 @@ def process_absence():
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (date_str, entry['Professeur'], entry['Semestre'], entry['Filiere'], 
                       entry['Groupe'], day_of_week, time_slot, room, entry['Module'], 'Non justifiée'))
-                count += 1
+                count_new += 1
+            else:
+                count_exist += 1
 
     db.commit()
-    flash(f"{count} absence(s) enregistrée(s) avec succès.", "success")
-    return redirect(url_for('dashboard'))
+
+    # --- FEEDBACK ULTRA PRÉCIS POUR L'UTILISATEUR ---
+    
+    if count_new > 0:
+        flash(f"✅ {count_new} absence(s) enregistrée(s) avec succès.", "success")
+        
+    if count_exist > 0:
+        flash(f"ℹ️ {count_exist} absence(s) étaient déjà enregistrées dans le système et ont été ignorées.", "info")
+        
+    if rooms_with_no_class:
+        # On liste les salles qui n'ont rien donné pour être 100% transparent !
+        salles_vides_str = ", ".join(rooms_with_no_class)
+        flash(f"⚠️ Attention : Aucun cours n'était prévu dans la base pour ces salles : {salles_vides_str}.", "warning")
+
+    return redirect(request.referrer or url_for('dashboard'))
 
 @app.route('/delete_absence/<int:absence_id>', methods=['POST'])
 @login_required
@@ -677,6 +872,7 @@ def ratt_session():
 @login_required
 def view_schedule():
     db = get_db()
+    init_core_tables()
     
     # 1. Récupérer les options pour TOUS les menus déroulants
     try:
@@ -708,22 +904,22 @@ def view_schedule():
 
     # 3. Remplir la grille selon le type de recherche
     if search_type == 'classe' and selected_filiere and selected_semestre:
-        query = "SELECT Jour, Lheure, Professeur, Module, Salle, groupe FROM MasterSchedule WHERE Filiere = ? AND Semestre = ?"
+        query = "SELECT rowid AS id, Jour, Lheure, Professeur, Module, Salle, groupe FROM MasterSchedule WHERE Filiere = ? AND Semestre = ?"
         params = [selected_filiere, selected_semestre]
         if selected_groupe != 'ALL':
             query += " AND groupe = ?"
             params.append(selected_groupe)
         schedule_data = db.execute(query, params).fetchall()
-        grp_text = f" - Groupe {selected_groupe}" if selected_groupe != 'ALL' else " - Vue Globale"
+        grp_text = f" - {selected_groupe}" if selected_groupe != 'ALL' else " - Vue Globale"
         schedule_title = f"{selected_filiere} (S{selected_semestre}){grp_text}"
         
     elif search_type == 'prof' and selected_prof:
-        query = "SELECT Jour, Lheure, Filiere, Semestre, Module, Salle, groupe FROM MasterSchedule WHERE Professeur = ?"
+        query = "SELECT rowid AS id, Jour, Lheure, Filiere, Semestre, Module, Salle, groupe FROM MasterSchedule WHERE Professeur = ?"
         schedule_data = db.execute(query, [selected_prof]).fetchall()
         schedule_title = f"Emploi du temps : {selected_prof}"
         
     elif search_type == 'module' and selected_module:
-        query = "SELECT Jour, Lheure, Professeur, Filiere, Semestre, Salle, groupe FROM MasterSchedule WHERE Module = ?"
+        query = "SELECT rowid AS id, Jour, Lheure, Professeur, Filiere, Semestre, Salle, groupe FROM MasterSchedule WHERE Module = ?"
         schedule_data = db.execute(query, [selected_module]).fetchall()
         schedule_title = f"Module : {selected_module}"
         
@@ -775,6 +971,21 @@ def add_schedule():
     # Magie : request.referrer permet de recharger la page exactement là où vous étiez !
     return redirect(request.referrer or url_for('view_schedule'))
 
+
+@app.route('/delete_schedule/<int:slot_id>', methods=['POST'])
+@login_required
+def delete_schedule(slot_id):
+    db = get_db()
+    try:
+        db.execute("DELETE FROM MasterSchedule WHERE id = ?", (slot_id,))
+        db.commit()
+        flash("Séance supprimée avec succès.", "success")
+    except Exception as e:
+        flash(f"Erreur lors de la suppression : {str(e)}", "danger")
+    return redirect(request.referrer or url_for('view_schedule'))
+
+
+
 @app.route('/edit_schedule', methods=['POST'])
 @login_required
 def edit_schedule():
@@ -797,16 +1008,6 @@ def edit_schedule():
         
     return redirect(url_for('view_schedule'))
 
-# --- SUPPRESSION D'UNE SÉANCE ---
-@app.route('/delete_schedule/<int:slot_id>', methods=['POST'])
-@login_required
-def delete_schedule(slot_id):
-    db = get_db()
-    db.execute("DELETE FROM MasterSchedule WHERE rowid = ?", (slot_id,))
-    db.commit()
-    flash("La séance a été supprimée avec succès.", "success")
-    # Retourne sur la page où on était
-    return redirect(request.referrer or url_for('view_schedule'))
 
 # --- GESTION DES JOURS EXCEPTIONNELS (VACANCES, GRÈVES, FÉRIÉS) ---
 

@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    
+    <div class="mb-4">
+        <h2 class="fw-bold text-navy"><i class="fas fa-database me-2"></i>Gestion des Données de Base</h2>
+        <p class="text-muted">C'est le cœur du système. Ajoutez ou supprimez ici les éléments qui apparaîtront dans les menus déroulants lors de la création des emplois du temps et des rattrapages.</p>
+    </div>
+
+    <div class="row g-4">
+        
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 fw-bold text-navy"><i class="fas fa-book me-2"></i>Modules</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <form action="{{ url_for('add_donnee') }}" method="POST" class="d-flex mb-3">
+                        <input type="hidden" name="type" value="Module">
+                        <input type="text" class="form-control me-2" name="valeur" placeholder="Nouveau module..." required>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i></button>
+                    </form>
+                    <ul class="list-group list-group-flush overflow-auto" style="max-height: 250px;">
+                        {% for m in modules %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-1">
+                            <span class="small fw-bold">{{ m.nom }}</span>
+                            <form action="{{ url_for('delete_donnee', type_donnee='Module', valeur=m.nom) }}" method="POST" onsubmit="return confirm('Supprimer ce module ?');">
+                                <button type="submit" class="btn btn-link text-danger p-0"><i class="fas fa-trash-alt"></i></button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-8">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 fw-bold text-navy"><i class="fas fa-user-tie me-2"></i>Professeurs</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <form action="{{ url_for('add_donnee') }}" method="POST" class="row g-2 mb-3 align-items-center">
+                        <input type="hidden" name="type" value="Professeur">
+                        <div class="col-6">
+                            <input type="text" class="form-control" name="valeur" placeholder="Nom du Professeur..." required>
+                        </div>
+                        <div class="col-4">
+                            <select name="status" class="form-select">
+                                <option value="Vacataire">Vacataire</option>
+                                <option value="Permanent">Permanent</option>
+                            </select>
+                        </div>
+                        <div class="col-2">
+                            <button type="submit" class="btn btn-success w-100"><i class="fas fa-plus"></i> Ajouter</button>
+                        </div>
+                    </form>
+                    <div class="overflow-auto" style="max-height: 250px;">
+                        <table class="table table-hover table-sm align-middle">
+                            <tbody>
+                                {% for p in professeurs %}
+                                <tr>
+                                    <td class="fw-bold">{{ p.name }}</td>
+                                    <td>
+                                        {% if p.status == 'Permanent' %}
+                                            <span class="badge bg-navy text-white">Permanent</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-dark border">Vacataire</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <form action="{{ url_for('delete_donnee', type_donnee='Professeur', valeur=p.name) }}" method="POST" onsubmit="return confirm('Supprimer ce professeur ?');">
+                                            <button type="submit" class="btn btn-link text-danger p-0"><i class="fas fa-trash-alt"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 fw-bold text-navy"><i class="fas fa-graduation-cap me-2"></i>Filières</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <form action="{{ url_for('add_donnee') }}" method="POST" class="d-flex mb-3">
+                        <input type="hidden" name="type" value="Filiere">
+                        <input type="text" class="form-control me-2" name="valeur" placeholder="Ex: Primaire..." required>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i></button>
+                    </form>
+                    <ul class="list-group list-group-flush overflow-auto" style="max-height: 200px;">
+                        {% for f in filieres %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-1">
+                            <span class="small fw-bold">{{ f.nom }}</span>
+                            <form action="{{ url_for('delete_donnee', type_donnee='Filiere', valeur=f.nom) }}" method="POST">
+                                <button type="submit" class="btn btn-link text-danger p-0"><i class="fas fa-trash-alt"></i></button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 fw-bold text-navy"><i class="fas fa-layer-group me-2"></i>Semestres</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <form action="{{ url_for('add_donnee') }}" method="POST" class="d-flex mb-3">
+                        <input type="hidden" name="type" value="Semestre">
+                        <input type="text" class="form-control me-2" name="valeur" placeholder="Ex: 2, 4, S6..." required>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i></button>
+                    </form>
+                    <ul class="list-group list-group-flush overflow-auto" style="max-height: 200px;">
+                        {% for s in semestres %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-1">
+                            <span class="small fw-bold">{{ s.nom }}</span>
+                            <form action="{{ url_for('delete_donnee', type_donnee='Semestre', valeur=s.nom) }}" method="POST">
+                                <button type="submit" class="btn btn-link text-danger p-0"><i class="fas fa-trash-alt"></i></button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 fw-bold text-navy"><i class="fas fa-users me-2"></i>Groupes</h5>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <form action="{{ url_for('add_donnee') }}" method="POST" class="d-flex mb-3">
+                        <input type="hidden" name="type" value="Groupe">
+                        <input type="text" class="form-control me-2" name="valeur" placeholder="Ex: Groupe 1, G2..." required>
+                        <button type="submit" class="btn btn-success"><i class="fas fa-plus"></i></button>
+                    </form>
+                    <ul class="list-group list-group-flush overflow-auto" style="max-height: 200px;">
+                        {% for g in groupes %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-1">
+                            <span class="small fw-bold">{{ g.nom }}</span>
+                            <form action="{{ url_for('delete_donnee', type_donnee='Groupe', valeur=g.nom) }}" method="POST">
+                                <button type="submit" class="btn btn-link text-danger p-0"><i class="fas fa-trash-alt"></i></button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .text-navy { color: #002b5e !important; }
+    .bg-navy { background-color: #002b5e !important; }
+    .btn-navy { background-color: #002b5e; color: #ffffff; border: none; }
+    .list-group-item { border-left: none; border-right: none; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+</style>
+{% endblock %}

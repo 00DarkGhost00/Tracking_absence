@@ -194,6 +194,8 @@
             <a href="{{ url_for('manage_holidays') }}" class="{{ 'active' if request.endpoint == 'manage_holidays' }}">
                 <i class="fas fa-calendar-times"></i> <span>Jours Exceptionnels</span> 
             </a>
+
+
             {% endif %}
 
             <a href="{{ url_for('prof_status') }}" class="{{ 'active' if request.endpoint == 'prof_status' }}">
@@ -213,9 +215,14 @@
             {% endif %}
 
             {% if user_role == 'admin' %}
+            <a href="{{ url_for('manage_donnees') }}" class="{{ 'active' if request.endpoint == 'manage_donnees' }}">
+                 <i class="fas fa-database me-2"></i> Données de Base </a>
+
             <a href="{{ url_for('manage_data') }}" class="{{ 'active' if request.endpoint == 'manage_data' }}">
                 <i class="fas fa-cog"></i> <span>Paramètres</span>
             </a>
+
+        
             {% endif %}
             
             <a href="{{ url_for('logout') }}" class="logout-btn mt-auto">
