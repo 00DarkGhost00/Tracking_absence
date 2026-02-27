@@ -797,6 +797,17 @@ def edit_schedule():
         
     return redirect(url_for('view_schedule'))
 
+# --- SUPPRESSION D'UNE SÉANCE ---
+@app.route('/delete_schedule/<int:slot_id>', methods=['POST'])
+@login_required
+def delete_schedule(slot_id):
+    db = get_db()
+    db.execute("DELETE FROM MasterSchedule WHERE rowid = ?", (slot_id,))
+    db.commit()
+    flash("La séance a été supprimée avec succès.", "success")
+    # Retourne sur la page où on était
+    return redirect(request.referrer or url_for('view_schedule'))
+
 # --- GESTION DES JOURS EXCEPTIONNELS (VACANCES, GRÈVES, FÉRIÉS) ---
 
 @app.route('/holidays', methods=['GET', 'POST'])

@@ -147,11 +147,12 @@
                     <thead class="bg-white text-navy text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 10;">
                         <tr>
                             <th class="py-3 ps-4 border-bottom">Date</th>
+                            <th class="py-3 border-bottom">Créneau</th>
                             <th class="py-3 border-bottom">Professeur</th>
+                            <th class="py-3 border-bottom">Salle</th>
                             <th class="py-3 border-bottom">Classe (Filière/Sem)</th>
                             <th class="py-3 border-bottom">Groupe</th>
                             <th class="py-3 border-bottom">Module</th>
-                            <th class="py-3 border-bottom">Créneau</th>
                             <th class="py-3 border-bottom text-center">Action</th>
                         </tr>
                     </thead>
@@ -159,7 +160,11 @@
                         {% for record in recent_absences %}
                         <tr class="absence-row">
                             <td class="ps-4 fw-bold text-dark row-date" style="font-size: 0.85rem;">{{ record.date_absent }}</td>
+                            <td class="row-time">
+                                <span class="badge time-badge"><i class="far fa-clock me-1"></i>{{ record.Lheure }}</span>
+                            </td>
                             <td class="row-prof"><strong class="text-navy">{{ record.Professeur }}</strong></td>
+                            <td class="row-Salle"><strong class="text-navy">{{ record.Salle }}</strong></td>
                             <td class="row-filiere">
                                 <span class="badge bg-light text-navy border px-2 py-1">
                                     {{ record.Filiere }} {% if record.Semestre %} (S{{ record.Semestre }}) {% endif %}
@@ -179,9 +184,7 @@
                                     <span class="text-muted fst-italic opacity-50" style="font-size: 0.8rem;">-</span>
                                 {% endif %}
                             </td>
-                            <td class="row-time">
-                                <span class="badge time-badge"><i class="far fa-clock me-1"></i>{{ record.Lheure }}</span>
-                            </td>
+                            
                             <td class="text-center">
                                 <form action="{{ url_for('delete_absence', absence_id=record.id) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette absence ?');">
                                     <button type="submit" class="btn btn-delete btn-sm" title="Supprimer">
