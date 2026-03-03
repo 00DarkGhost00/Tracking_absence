@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<div class="container-fluid py-4 px-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="academic-title text-navy mb-1">
+                <i class="fas fa-list-alt text-gold me-2"></i>Journal d'Audit & d'Activités
+            </h2>
+            <p class="text-muted small text-uppercase tracking-wide mb-0">Traçabilité complète des actions utilisateurs (ERP)</p>
+        </div>
+        <div>
+            <button onclick="window.print()" class="btn btn-outline-secondary shadow-sm d-print-none">
+                <i class="fas fa-print me-2"></i>Exporter le journal
+            </button>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-lg academic-card">
+        <div class="bg-light-gray px-4 py-3 border-bottom d-flex gap-3 flex-wrap align-items-center d-print-none">
+            <div class="flex-grow-1" style="min-width: 250px;">
+                <div class="input-group input-group-sm shadow-sm rounded">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                    <input type="text" id="logSearch" class="form-control border-start-0 ps-0 fw-500" placeholder="Rechercher un prof, une action, un utilisateur...">
+                </div>
+            </div>
+            
+            <div style="width: 160px;">
+                <select id="logActionFilter" class="form-select form-select-sm shadow-sm text-muted fw-500">
+                    <option value="">Toutes les actions</option>
+                    <option value="AJOUT">Ajouts</option>
+                    <option value="MODIFICATION">Modifications</option>
+                    <option value="SUPPRESSION">Suppressions</option>
+                </select>
+            </div>
+            
+            <div style="width: 160px;">
+                <select id="logEntityFilter" class="form-select form-select-sm shadow-sm text-muted fw-500">
+                    <option value="">Toutes les catégories</option>
+                    <option value="Absence">Absences</option>
+                    <option value="Emploi du Temps">Emploi du Temps</option>
+                    <option value="Rattrapage">Rattrapages</option>
+                    <option value="Professeurs">Professeurs</option>
+                    <option value="Données de Base">Données de Base</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 650px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0 custom-table" id="logsTable">
+                    <thead class="bg-white text-navy text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 10;">
+                        <tr>
+                            <th class="py-3 ps-4 border-bottom" style="width: 170px;">Date & Heure</th>
+                            <th class="py-3 border-bottom" style="width: 150px;">Utilisateur</th>
+                            <th class="py-3 border-bottom" style="width: 140px;">Action</th>
+                            <th class="py-3 border-bottom" style="width: 150px;">Catégorie</th>
+                            <th class="py-3 border-bottom">Description détaillée de l'opération</th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        {% for log in logs %}
+                        <tr class="log-row">
+                            <td class="ps-4 text-muted log-date" style="font-size: 0.85rem; font-family: monospace;">
+                                <i class="far fa-clock me-1"></i> {{ log.timestamp }}
+                            </td>
+                            
+                            <td class="log-user">
+                                <span class="badge bg-light text-dark border px-2 py-1">
+                                    <i class="fas fa-user-circle text-navy me-1"></i> <strong>{{ log.user_name }}</strong>
+                                </span>
+                            </td>
+
+                            <td class="log-action">
+                                {% if log.action_type == 'AJOUT' %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 w-100 text-start"><i class="fas fa-plus-circle me-1"></i> AJOUT</span>
+                                {% elif log.action_type == 'MODIFICATION' %}
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1 w-100 text-start"><i class="fas fa-edit me-1"></i> MODIF.</span>
+                                {% elif log.action_type == 'SUPPRESSION' %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1 w-100 text-start"><i class="fas fa-trash-alt me-1"></i> SUPPR.</span>
+                                {% else %}
+                                    <span class="badge bg-secondary px-2 py-1">{{ log.action_type }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="log-entity fw-bold text-navy" style="font-size: 0.85rem;">{{ log.entity_type }}</td>
+                            <td class="log-desc text-dark" style="font-size: 0.9rem; line-height: 1.4;">{{ log.description }}</td>
+                        </tr>
+                        {% else %}
+                        <tr id="noDataRow">
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <div class="opacity-50 mb-3"><i class="fas fa-shield-alt fa-3x text-navy"></i></div>
+                                <h6 class="fw-bold">Le journal est vide</h6>
+                                <span>Aucune activité n'a encore été enregistrée dans le système.</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root { --navy: #002147; --gold: #C5A059; --light-gray: #f8fafc; --border-color: #e2e8f0; }
+    body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; }
+    .academic-title { font-family: 'Playfair Display', serif; font-weight: 700; letter-spacing: -0.5px; }
+    .tracking-wide { letter-spacing: 1.5px; font-weight: 600; font-size: 0.75rem; }
+    .text-gold { color: var(--gold); }
+    .text-navy { color: var(--navy); }
+    .bg-light-gray { background-color: var(--light-gray); }
+    .academic-card { border-radius: 12px; overflow: hidden; }
+    .custom-table > :not(caption) > * > * { border-bottom-color: var(--border-color); padding: 0.8rem 0.5rem; }
+    .custom-table tbody tr:hover { background-color: rgba(0, 33, 71, 0.02); }
+    .input-group-text { border-color: #dee2e6; }
+    .form-control:focus, .form-select:focus { border-color: var(--navy); box-shadow: 0 0 0 0.25rem rgba(0, 33, 71, 0.1); }
+    
+    @media print {
+        @page { size: landscape; }
+        .d-print-none { display: none !important; }
+        .table-responsive { max-height: none !important; overflow: visible !important; }
+        .badge { border: 1px solid #000 !important; color: #000 !important; background: transparent !important; }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const logSearch = document.getElementById('logSearch');
+        const logActionFilter = document.getElementById('logActionFilter');
+        const logEntityFilter = document.getElementById('logEntityFilter');
+        const rows = document.querySelectorAll('.log-row');
+
+        function filterLogs() {
+            const searchTerm = logSearch.value.toLowerCase();
+            const actionTerm = logActionFilter.value.toLowerCase();
+            const entityTerm = logEntityFilter.value.toLowerCase();
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const action = row.querySelector('.log-action').textContent.toLowerCase();
+                const entity = row.querySelector('.log-entity').textContent.toLowerCase();
+                
+                const matchesSearch = text.includes(searchTerm);
+                const matchesAction = actionTerm === "" || action.includes(actionTerm);
+                const matchesEntity = entityTerm === "" || entity.includes(entityTerm);
+
+                if (matchesSearch && matchesAction && matchesEntity) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        logSearch.addEventListener('input', filterLogs);
+        logActionFilter.addEventListener('change', filterLogs);
+        logEntityFilter.addEventListener('change', filterLogs);
+    });
+</script>
+{% endblock %}

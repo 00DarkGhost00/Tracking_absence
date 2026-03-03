@@ -7,155 +7,119 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root { 
             --navy: #002147; 
+            --navy-light: #003366;
             --gold: #C5A059; 
-            --gold-light: #fdfaf3;
-            --bg-light: #f8fafc; /* Gris très très clair pour le fond de page */
-            --sidebar-width: 270px;
-            --text-muted: #64748b;
+            --gold-soft: rgba(197, 160, 89, 0.1);
+            --bg-light: #f4f7fa; 
+            --sidebar-width: 280px;
+            --sidebar-bg: #ffffff;
         }
 
         body { 
             background: var(--bg-light); 
-            margin: 0;
-            font-family: 'Poppins', sans-serif; /* Nouvelle police plus élégante */
+            font-family: 'Inter', sans-serif;
             color: #334155;
+            overflow-x: hidden;
         }
 
-        /* --- SIDEBAR STYLING --- */
+        /* --- SIDEBAR --- */
         .sidebar { 
             height: 100vh; 
             width: var(--sidebar-width); 
             position: fixed; 
-            top: 0;
-            left: 0;
-            background: #ffffff; /* Fond blanc pour faire ressortir le logo */
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.04); /* Ombre douce et moderne */
+            top: 0; left: 0;
+            background: var(--sidebar-bg); 
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.03);
             z-index: 1000;
             display: flex;
             flex-direction: column;
+            padding-bottom: 20px;
         }
 
-        /* Mise en valeur du Logo */
         .sidebar-brand {
-            padding: 35px 20px 25px;
+            padding: 30px 25px;
             text-align: center;
-            border-bottom: 1px solid #f1f5f9;
         }
-
-        .sidebar-brand img {
-            max-width: 140px; /* Logo plus grand */
-            height: auto;
-            margin-bottom: 15px;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05)); /* Légère ombre sous le logo */
-            transition: transform 0.3s ease;
-        }
-
-        .sidebar-brand img:hover {
-            transform: scale(1.03); /* Petit effet au passage de la souris */
-        }
-
-        .sidebar-brand h4 {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: var(--navy);
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Liens de navigation */
-        .nav-links {
-            padding: 20px 0;
-            overflow-y: auto; /* Scroll si l'écran est petit */
-        }
-
-        .sidebar a { 
-            color: var(--text-muted); 
-            padding: 14px 25px; 
-            display: flex; 
+        .sidebar-brand img { max-width: 120px; margin-bottom: 10px; }
+        
+        /* User Profile Mini-Card */
+        .user-panel {
+            margin: 0 20px 20px;
+            padding: 15px;
+            background: var(--bg-light);
+            border-radius: 12px;
+            display: flex;
             align-items: center;
+        }
+        .user-panel .avatar {
+            width: 40px; height: 40px;
+            background: var(--navy);
+            color: white;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; margin-right: 12px;
+        }
+        .user-info .name { font-size: 0.85rem; fw-bold; color: var(--navy); display: block; }
+        .user-info .role { font-size: 0.7rem; color: var(--gold); text-transform: uppercase; font-weight: 600; }
+
+        /* Navigation Groups */
+        .nav-section-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: #94a3b8;
+            padding: 20px 30px 10px;
+            font-weight: 700;
+        }
+
+        .nav-links { flex-grow: 1; overflow-y: auto; }
+        .sidebar a { 
+            color: #64748b; 
+            padding: 10px 25px; 
+            margin: 2px 15px;
+            display: flex; align-items: center;
             text-decoration: none; 
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
+            transition: all 0.2s;
+            font-size: 0.9rem;
             font-weight: 500;
-            border-left: 4px solid transparent; /* Prépare la bordure pour ne pas décaler le texte */
-            margin: 4px 15px; /* Marge pour faire un effet "bouton/pilule" */
             border-radius: 8px;
         }
 
-        .sidebar a i {
-            width: 30px;
-            font-size: 1.1rem;
-            transition: color 0.3s ease;
-        }
+        .sidebar a i { width: 28px; font-size: 1.1rem; transition: 0.2s; }
 
-        /* Effet au survol */
         .sidebar a:hover { 
-            background: #f1f5f9; 
+            background: var(--bg-light); 
             color: var(--navy); 
-            transform: translateX(4px); /* Petit décalage vers la droite très fluide */
+            padding-left: 30px;
         }
 
-        .sidebar a:hover i {
-            color: var(--navy);
-        }
-
-        /* Effet du lien Actif (La page actuelle) */
         .sidebar a.active { 
-            background: var(--gold-light); 
-            color: var(--navy); 
-            border-left: 4px solid var(--gold);
-            font-weight: 600;
-            box-shadow: 0 2px 4px rgba(197, 160, 89, 0.1);
+            background: var(--navy); 
+            color: #fff; 
+            box-shadow: 0 4px 12px rgba(0, 33, 71, 0.2);
         }
+        .sidebar a.active i { color: var(--gold); }
 
-        .sidebar a.active i {
-            color: var(--gold);
+        .logout-btn {
+            margin: 20px 15px 0;
+            border: 1px solid #fee2e2;
+            color: #ef4444 !important;
         }
+        .logout-btn:hover { background: #fef2f2 !important; border-color: #fca5a5; }
 
-        /* Bouton déconnexion stylisé différemment en bas */
-        .nav-links .logout-btn {
-            margin-top: auto;
-            color: #ef4444;
-        }
-        .nav-links .logout-btn:hover {
-            background: #fef2f2;
-            color: #dc2626;
-        }
+        /* --- MAIN CONTENT --- */
+        .main { margin-left: var(--sidebar-width); padding: 40px; min-height: 100vh; }
 
-        /* --- MAIN CONTENT AREA --- */
-        .main { 
-            margin-left: var(--sidebar-width); 
-            padding: 40px; 
-            min-height: 100vh;
-        }
-
-        /* Notifications (Flash messages) repensées */
-        .alert {
-            border: none;
-            border-radius: 10px;
-            font-weight: 500;
-        }
-        .alert-success { background-color: #ecfdf5; color: #065f46; border-left: 4px solid #10b981; }
-        .alert-warning { background-color: #fffbeb; color: #92400e; border-left: 4px solid #f59e0b; }
-        .alert-danger { background-color: #fef2f2; color: #991b1b; border-left: 4px solid #ef4444; }
-
-        /* --- RESPONSIVE MOBILE --- */
         @media (max-width: 768px) {
-            .sidebar { width: 80px; }
-            .sidebar-brand { padding: 20px 10px; }
-            .sidebar-brand img { max-width: 50px; }
-            .sidebar-brand h4, .sidebar a span { display: none; }
-            .sidebar a { justify-content: center; padding: 15px 0; margin: 5px 10px; }
-            .sidebar a i { width: auto; margin: 0; }
-            .sidebar a:hover { transform: none; }
-            .main { margin-left: 80px; padding: 20px; }
+            .sidebar { width: 70px; }
+            .sidebar-brand h4, .user-panel, .nav-section-title, .sidebar a span { display: none; }
+            .sidebar a { justify-content: center; padding: 15px 0; margin: 5px; }
+            .main { margin-left: 70px; padding: 20px; }
         }
     </style>
 </head>
@@ -163,19 +127,35 @@
 
     <div class="sidebar">
         <div class="sidebar-brand">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo ESEF">
-            <h4>Portail ESEF</h4>
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ESEF">
+        </div>
+
+        <div class="user-panel">
+            <div class="avatar text-uppercase">{{ session.get('username')[0] }}</div>
+            <div class="user-info">
+                <span class="name">{{ session.get('username')|capitalize }}</span>
+                <span class="role">{{ session.get('role') }}</span>
+            </div>
         </div>
         
-        <div class="nav-links d-flex flex-column" style="height: calc(100vh - 160px);">
-            
+        <div class="nav-links">
             {% set user_role = session.get('role', 'admin') %}
 
+            <div class="nav-section-title">Analyse & Rapports</div>
+            <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">
+                <i class="fas fa-th-large"></i> <span>Tableau de Bord</span>
+            </a>
+            <a href="{{ url_for('view_schedule') }}" class="{{ 'active' if request.endpoint == 'view_schedule' }}">
+                <i class="fas fa-calendar-alt"></i> <span>Emploi du Temps</span>
+            </a>
+
+            <div class="nav-section-title">Gestion Absences</div>
             {% if user_role in ['admin', 'manager'] %}
             <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' }}">
-                <i class="fas fa-edit"></i> <span>Saisie des Absences</span>
+                <i class="fas fa-plus-square"></i> <span>Saisie Absence</span>
             </a>
             {% endif %}
+<<<<<<< Updated upstream
 
             {% if user_role in ['admin', 'manager','compta'] %}
             <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">
@@ -196,30 +176,53 @@
             </a>
             {% endif %}
 
+=======
+>>>>>>> Stashed changes
             <a href="{{ url_for('prof_status') }}" class="{{ 'active' if request.endpoint == 'prof_status' }}">
-                <i class="fas fa-id-badge"></i> <span>Statut Professeur</span>
+                <i class="fas fa-user-clock"></i> <span>Statut Professeur</span>
             </a>
             <a href="{{ url_for('professors_list') }}" class="{{ 'active' if request.endpoint == 'professors_list' }}">
                 <i class="fas fa-search"></i> <span>Recherche & Heures</span>
             </a>
 
+            <div class="nav-section-title">Suivi Rattrapage</div>
             {% if user_role in ['admin', 'manager'] %}
             <a href="{{ url_for('ratt_session') }}" class="{{ 'active' if request.endpoint == 'ratt_session' }}">
-                <i class="fas fa-plus-circle"></i> <span>Nouvelle Session Ratt.</span>
+                <i class="fas fa-tools"></i> <span>Nouveau Rattrapage</span>
             </a>
+            {% endif %}
             <a href="{{ url_for('rattrapages_list') }}" class="{{ 'active' if request.endpoint == 'rattrapages_list' }}">
-                <i class="fas fa-scroll"></i> <span>Historique Rattrapages</span>
+                <i class="fas fa-clipboard-list"></i> <span>Historique</span>
+            </a>
+
+            {% if user_role == 'admin' %}
+<<<<<<< Updated upstream
+            <a href="{{ url_for('manage_data') }}" class="{{ 'active' if request.endpoint == 'manage_data' }}">
+                <i class="fas fa-cog"></i> <span>Paramètres</span>
+=======
+            <div class="nav-section-title">Administration</div>
+            <a href="{{ url_for('manage_users') }}" class="{{ 'active' if request.endpoint == 'manage_users' }}">
+                <i class="fas fa-users-cog"></i> <span>Utilisateurs</span>
+            </a>
+            <a href="{{ url_for('manage_donnees') }}" class="{{ 'active' if request.endpoint == 'manage_donnees' }}">
+                <i class="fas fa-database"></i> <span>Bases & Référentiels</span>
+            </a>
+            <a href="{{ url_for('manage_holidays') }}" class="{{ 'active' if request.endpoint == 'manage_holidays' }}">
+                <i class="fas fa-umbrella-beach"></i> <span>Congés & Fériés</span> 
+            </a>
+            <a href="{{ url_for('view_logs') }}" class="{{ 'active' if request.endpoint == 'view_logs' }}">
+                <i class="fas fa-history"></i> <span>Journal (Logs)</span>
+>>>>>>> Stashed changes
             </a>
             {% endif %}
 
-            {% if user_role == 'admin' %}
-            <a href="{{ url_for('manage_data') }}" class="{{ 'active' if request.endpoint == 'manage_data' }}">
-                <i class="fas fa-cog"></i> <span>Paramètres</span>
+            <div class="nav-section-title">Paramètres</div>
+            <a href="{{ url_for('profile') }}" class="{{ 'active' if request.endpoint == 'profile' }}">
+                <i class="fas fa-user-circle"></i> <span>Mon Profil</span>
             </a>
-            {% endif %}
             
-            <a href="{{ url_for('logout') }}" class="logout-btn mt-auto">
-                <i class="fas fa-power-off"></i> <span>Déconnexion ({{ session.get('username')|capitalize }})</span>
+            <a href="{{ url_for('logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> <span>Déconnexion</span>
             </a>
         </div>
     </div>
@@ -227,15 +230,13 @@
     <div class="main">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="mb-4">
                 {% for category, message in messages %}
-                    {% set alert_class = category if category in ['success', 'danger', 'warning', 'info'] else 'info' %}
-                    <div class="alert alert-{{ alert_class }} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="alert alert-{{ category if category in ['success', 'danger', 'warning', 'info'] else 'info' }} alert-dismissible fade show border-0 shadow-sm" role="alert">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
-                </div>
             {% endif %}
         {% endwith %}
         

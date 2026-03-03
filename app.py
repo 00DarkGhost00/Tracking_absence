@@ -2,10 +2,10 @@ import os, sqlite3
 import pandas as pd
 import socket
 from collections import Counter
-from datetime import datetime
 from zeroconf import ServiceInfo, Zeroconf
 from flask import Flask, render_template, request, redirect, url_for, g, send_file, session, flash, jsonify
 from flask import send_file, session, flash 
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from functools import wraps
 
@@ -15,13 +15,6 @@ DATABASE = 'absence_tracker.db'
 
 # ---- AUTO RELOAD APP
 app.config['TEMPLATES_AUTO_RELOAD'] = True
-
-# --- AUTH CONFIG ---
-USERS = {
-    "admin": {"password": "adminEsef2026", "role": "admin"},
-    "compta": {"password": "compta2026", "role": "compta"},
-    "manager": {"password": "manager2026", "role": "manager"}
-}
 
 # --- LOGIN DECORATOR ---
 def login_required(f):
@@ -39,24 +32,28 @@ def login():
         username = request.form['username'].lower().strip()
         password = request.form['password']
         
-        # Vérification si l'utilisateur existe et si le mot de passe est bon
-        if username in USERS and USERS[username]['password'] == password:
+        db = get_db()
+        user = db.execute("SELECT * FROM Users WHERE username = ?", (username,)).fetchone()
+        
+        # Correction ici : on utilise check_password_hash
+        if user and check_password_hash(user['password'], password):
             session['logged_in'] = True
-            session['username'] = username
-            session['role'] = USERS[username]['role'] # On sauvegarde le rôle !
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            session['role'] = user['role']
+            session['full_name'] = user['full_name']
             
-            # Redirection intelligente : on envoie chaque rôle vers sa page la plus utile
-            if session['role'] == 'compta':
-                return redirect(url_for('professors_list')) # Compta va direct aux Heures
-            elif session['role'] == 'manager':
-                return redirect(url_for('index')) # Manager va direct à la Saisie
-            else:
-                return redirect(url_for('dashboard')) # Admin va au Dashboard
+            # Redirection intelligente
+            if session['role'] == 'compta': 
+                return redirect(url_for('professors_list'))
+            elif session['role'] == 'manager': 
+                return redirect(url_for('index'))
+            else: 
+                return redirect(url_for('dashboard'))
         else:
-            flash('Identifiants incorrects. Veuillez réessayer.', 'danger')
+            flash('Identifiants incorrects.', 'danger')
             
     return render_template('login.html')
-
 
 
 @app.route('/logout')
@@ -64,7 +61,46 @@ def logout():
     session.pop('logged_in', None)
     return redirect(url_for('login'))
 
+
+
 # --- DATABASE SETUP ---
+
+def init_db():
+    db = get_db()
+    # Table des Utilisateurs
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS Users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            full_name TEXT,
+            role TEXT NOT NULL,
+            email TEXT
+        )
+    ''')
+
+    try:
+        db.execute("ALTER TABLE Users ADD COLUMN email TEXT")
+        db.commit()
+    except:
+        pass # La colonne existe déjà, on ne fait rien
+    
+    # Liste des utilisateurs par défaut à créer
+    default_users = [
+        ('admin', 'adminEsef2026', 'Administrateur Système', 'admin'),
+        ('compta', 'compta2026', 'Service Comptabilité', 'compta'),
+        ('manager', 'manager2026', 'Manager Scolarité', 'manager')
+    ]
+
+    for username, password, full_name, role in default_users:
+        user_exists = db.execute("SELECT 1 FROM Users WHERE username = ?", (username,)).fetchone()
+        if not user_exists:
+            hashed_pw = generate_password_hash(password)
+            db.execute("INSERT INTO Users (username, password, full_name, role) VALUES (?, ?, ?, ?)",
+                       (username, hashed_pw, full_name, role))
+    
+    db.commit()
+    
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
@@ -89,6 +125,205 @@ def close_connection(e):
     db = getattr(g, '_database', None)
     if db is not None: db.close()
 
+<<<<<<< Updated upstream
+=======
+
+
+@app.route('/admin/utilisateurs', methods=['GET', 'POST'])
+@login_required
+def manage_users():
+    # Sécurité : Seul le rôle 'admin' peut voir cette page
+    if session.get('role') != 'admin':
+        flash("Accès interdit : Réservé à l'administrateur.", "danger")
+        return redirect(url_for('dashboard'))
+
+    db = get_db()
+    if request.method == 'POST':
+        username = request.form.get('username').lower().strip()
+        password = request.form.get('password')
+        role = request.form.get('role')
+        email = request.form.get('email')
+        full_name = request.form.get('full_name')
+
+        try:
+            hashed_pw = generate_password_hash(password)
+            db.execute("INSERT INTO Users (username, password, full_name, role, email) VALUES (?, ?, ?, ?, ?)",
+                       (username, hashed_pw, full_name, role, email))
+            db.commit()
+            flash(f"L'utilisateur {username} a été créé !", "success")
+        except:
+            flash("Erreur : Ce nom d'utilisateur existe déjà.", "danger")
+
+    users = db.execute("SELECT id, username, full_name, role, email FROM Users").fetchall()
+    return render_template('manage_users.html', users=users)
+
+@app.route('/admin/delete_user/<int:user_id>')
+@login_required
+def delete_user(user_id):
+    if session.get('role') != 'admin': return redirect(url_for('dashboard'))
+    
+    db = get_db()
+    # On empêche l'admin de se supprimer lui-même par erreur
+    if user_id == session.get('user_id'):
+        flash("Action impossible : Vous ne pouvez pas supprimer votre propre compte.", "danger")
+        return redirect(url_for('manage_users'))
+        
+    db.execute("DELETE FROM Users WHERE id = ?", (user_id,))
+    db.commit()
+    log_activity('SUPPRESSION', 'Sécurité', f"Utilisateur  {user_id} supprimé")
+    flash("Utilisateur supprimé avec succès.", "success")
+    return redirect(url_for('manage_users'))
+
+# --- MODIFIER UN UTILISATEUR (Email ou Password) ---
+@app.route('/admin/update_user/<int:user_id>', methods=['POST'])
+@login_required
+def update_user(user_id):
+    if session.get('role') != 'admin': return redirect(url_for('dashboard'))
+    
+    db = get_db()
+    new_email = request.form.get('email')
+    new_password = request.form.get('password')
+    
+    # Mise à jour de l'email
+    db.execute("UPDATE Users SET email = ? WHERE id = ?", (new_email, user_id))
+    
+    # Si un mot de passe a été saisi, on le hache et on l'enregistre
+    if new_password and len(new_password) > 0:
+        hashed_pw = generate_password_hash(new_password)
+        db.execute("UPDATE Users SET password = ? WHERE id = ?", (hashed_pw, user_id))
+        flash(f"Email et Mot de passe mis à jour.", "success")
+    else:
+        flash(f"Email mis à jour.", "info")
+        
+    db.commit()
+    return redirect(url_for('manage_users'))
+
+
+# =======================================================
+# GESTION DES DONNÉES DE BASE (LE COEUR DE L'APPLICATION)
+# =======================================================
+
+def init_core_tables():
+    db = get_db()
+    db.execute("CREATE TABLE IF NOT EXISTS Filieres (nom TEXT PRIMARY KEY)")
+    db.execute("CREATE TABLE IF NOT EXISTS Semestres (nom TEXT PRIMARY KEY)")
+    db.execute("CREATE TABLE IF NOT EXISTS Modules (nom TEXT PRIMARY KEY)")
+    db.execute("CREATE TABLE IF NOT EXISTS Groupes (nom TEXT PRIMARY KEY)")
+    db.execute("CREATE TABLE IF NOT EXISTS Professors (name TEXT PRIMARY KEY, status TEXT DEFAULT 'Vacataire')")
+    db.commit()
+
+@app.route('/donnees')
+@login_required
+def manage_donnees():
+    init_core_tables()
+    db = get_db()
+    filieres = db.execute("SELECT nom FROM Filieres ORDER BY nom").fetchall()
+    semestres = db.execute("SELECT nom FROM Semestres ORDER BY nom").fetchall()
+    modules = db.execute("SELECT nom FROM Modules ORDER BY nom").fetchall()
+    groupes = db.execute("SELECT nom FROM Groupes ORDER BY nom").fetchall()
+    professeurs = db.execute("SELECT name, status FROM Professors ORDER BY name").fetchall()
+    
+    return render_template('donnees.html', 
+                           filieres=filieres, semestres=semestres, 
+                           modules=modules, groupes=groupes, professeurs=professeurs)
+
+@app.route('/add_donnee', methods=['POST'])
+@login_required
+def add_donnee():
+    db = get_db()
+    type_donnee = request.form.get('type')
+    valeur = request.form.get('valeur', '').strip()
+    status = request.form.get('status', 'Vacataire') # Utilisé uniquement pour les profs
+
+    if not valeur:
+        flash("La valeur ne peut pas être vide.", "warning")
+        return redirect(url_for('manage_donnees'))
+
+    try:
+        if type_donnee == 'Filiere': db.execute("INSERT INTO Filieres (nom) VALUES (?)", (valeur,))
+        elif type_donnee == 'Semestre': db.execute("INSERT INTO Semestres (nom) VALUES (?)", (valeur,))
+        elif type_donnee == 'Module': db.execute("INSERT INTO Modules (nom) VALUES (?)", (valeur,))
+        elif type_donnee == 'Groupe': db.execute("INSERT INTO Groupes (nom) VALUES (?)", (valeur,))
+        elif type_donnee == 'Professeur': db.execute("INSERT INTO Professors (name, status) VALUES (?, ?)", (valeur, status))
+        db.commit()
+
+        # --- LOG ---
+        log_activity('AJOUT', 'Données de Base', f"Ajout de '{valeur}' dans la catégorie {type_donnee}")
+        # ----------------
+        flash(f"{valeur} a été ajouté avec succès aux {type_donnee}s.", "success")
+    except Exception as e: # Souvent une erreur d'intégrité si l'élément existe déjà
+        flash(f"Erreur : '{valeur}' existe déjà dans la liste des {type_donnee}s.", "danger")
+    
+    return redirect(url_for('manage_donnees'))
+
+@app.route('/delete_donnee/<type_donnee>/<valeur>', methods=['POST'])
+@login_required
+def delete_donnee(type_donnee, valeur):
+    db = get_db()
+    try:
+        if type_donnee == 'Filiere': db.execute("DELETE FROM Filieres WHERE nom = ?", (valeur,))
+        elif type_donnee == 'Semestre': db.execute("DELETE FROM Semestres WHERE nom = ?", (valeur,))
+        elif type_donnee == 'Module': db.execute("DELETE FROM Modules WHERE nom = ?", (valeur,))
+        elif type_donnee == 'Groupe': db.execute("DELETE FROM Groupes WHERE nom = ?", (valeur,))
+        elif type_donnee == 'Professeur': db.execute("DELETE FROM Professors WHERE name = ?", (valeur,))
+        db.commit()
+        # --- LOG  ---
+        log_activity('SUPPRESSION', 'Données de Base', f"Suppression de '{valeur}' de la catégorie {type_donnee}")
+        # ----------------
+        flash(f"{valeur} a été retiré des {type_donnee}s.", "success")
+    except Exception as e:
+        flash("Erreur lors de la suppression.", "danger")
+    
+    return redirect(url_for('manage_donnees'))
+
+
+# ==========================================
+# SYSTÈME DE LOGS (JOURNAL D'ACTIVITÉS)
+# ==========================================
+def init_log_table():
+    db = get_db()
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS ActivityLogs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME,
+            user_name TEXT,  /* NOUVELLE COLONNE POUR L'UTILISATEUR */
+            action_type TEXT,
+            entity_type TEXT,
+            description TEXT
+        )
+    """)
+    # On s'assure que la colonne existe si la table était déjà créée
+    try:
+        db.execute("ALTER TABLE ActivityLogs ADD COLUMN user_name TEXT DEFAULT 'Système'")
+    except:
+        pass
+    db.commit()
+
+def log_activity(action_type, entity_type, description):
+    init_log_table()
+    db = get_db()
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # On récupère le nom de l'utilisateur connecté (modifiez 'username' si vous utilisez une autre clé de session)
+    try:
+        utilisateur_actuel = session.get('username', 'Admin') # Ou current_user.username si vous utilisez Flask-Login
+    except:
+        utilisateur_actuel = "Système"
+
+    db.execute("INSERT INTO ActivityLogs (timestamp, user_name, action_type, entity_type, description) VALUES (?, ?, ?, ?, ?)",
+               (now, utilisateur_actuel, action_type.upper(), entity_type, description))
+    db.commit()
+
+@app.route('/logs')
+@login_required
+def view_logs():
+    init_log_table()
+    db = get_db()
+    # On récupère les 500 dernières actions
+    logs = db.execute("SELECT * FROM ActivityLogs ORDER BY timestamp DESC LIMIT 500").fetchall()
+    return render_template('logs.html', logs=logs)
+
+>>>>>>> Stashed changes
 # --- STATS LOGIC ---
 def get_stats_for_prof(prof_name):
     db = get_db()
@@ -182,6 +417,41 @@ def index():
     except: rooms = []
     slots = ["8h30 - 11h30", "11h45 - 14h45", "15h00 - 18h00"]
     return render_template('index.html', rooms=rooms, time_slots=slots, today=datetime.now().strftime('%Y-%m-%d'))
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    db = get_db()
+    user_id = session.get('user_id')
+
+    if request.method == 'POST':
+        full_name = request.form.get('full_name')
+        new_password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        # Mise à jour du nom
+        db.execute("UPDATE Users SET full_name = ? WHERE id = ?", (full_name, user_id))
+        
+        # Changement de mot de passe si rempli
+        if new_password:
+            if new_password == confirm_password:
+                hashed_pw = generate_password_hash(new_password)
+                db.execute("UPDATE Users SET password = ? WHERE id = ?", (hashed_pw, user_id))
+                flash("Profil et mot de passe mis à jour !", "success")
+            else:
+                flash("Les mots de passe ne correspondent pas.", "danger")
+        else:
+            flash("Profil mis à jour.", "info")
+        
+        db.commit()
+        session['full_name'] = full_name # Rafraîchir la session
+
+    user = db.execute("SELECT * FROM Users WHERE id = ?", (user_id,)).fetchone()
+    return render_template('profile.html', user=user)
+
+
+
 
 @app.route('/dashboard')
 @login_required
@@ -392,6 +662,9 @@ def prof_status():
             try:
                 db.execute("INSERT INTO Professors (name, status) VALUES (?, ?)", (new_prof, new_status))
                 db.commit()
+                # --- LOG  ---
+                log_activity('AJOUT', 'Professeurs', f"Nouveau professeur : {new_prof} ({new_status})")
+                # ----------------
                 flash(f"Professeur {new_prof} ajouté avec succès.")
             except sqlite3.IntegrityError:
                 flash(f"Le professeur {new_prof} existe déjà dans la base.")
@@ -413,6 +686,9 @@ def toggle_status(name):
         new_status = "Vacataire" if prof['status'] == "Permanent" else "Permanent"
         db.execute("UPDATE Professors SET status = ? WHERE name = ?", (new_status, name))
         db.commit()
+        # --- LOG  ---
+        log_activity('MODIFICATION', 'Professeurs', f"Statut de {name} changé en {new_status}")
+        # ----------------
         flash(f"Le statut de {name} a été changé en {new_status}.")
     return redirect(url_for('prof_status'))
 
@@ -534,7 +810,9 @@ def process_ratt():
         (date_ratt, prof, time_slot, salle, filiere, semestre, module_name, groupe)
     )
     db.commit()
-    
+    # --- LOG ---
+    log_activity('AJOUT', 'Rattrapage', f"Rattrapage programmé pour {prof} ({module_name}) le {date_ratt}")
+    # ----------------
     flash("Séance de rattrapage enregistrée avec succès.", "success")
     return redirect(url_for('rattrapages_list'))
 
@@ -627,7 +905,17 @@ def process_absence():
     days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
     day_of_week = days[date_obj.weekday()]
 
+<<<<<<< Updated upstream
     count = 0
+=======
+    count_new = 0
+    count_exist = 0
+    rooms_with_no_class = []
+    
+    # NOUVEAU : On crée une liste pour stocker les détails de qui a été noté absent
+    details_ajoutes = []
+
+>>>>>>> Stashed changes
     for room in empty_rooms:
         schedule_entries = db.execute('''
             SELECT Professeur, Semestre, Filiere, Groupe, Module 
@@ -635,7 +923,29 @@ def process_absence():
             WHERE Jour = ? AND Lheure = ? AND Salle = ?
         ''', (day_of_week, time_slot, room)).fetchall()
 
+<<<<<<< Updated upstream
         for entry in schedule_entries:
+=======
+        ratt_entries = []
+        try:
+            ratt_entries = db.execute('''
+                SELECT Professeur, Semestre, Filiere, groupe AS Groupe, Module 
+                FROM RattSessions 
+                WHERE date_ratt = ? 
+                  AND TRIM(Lheure) = ? 
+                  AND TRIM(Salle) COLLATE NOCASE = ?
+            ''', (date_str, time_slot.strip(), room.strip())).fetchall()
+        except:
+            pass 
+
+        all_entries = schedule_entries + ratt_entries
+
+        if not all_entries:
+            rooms_with_no_class.append(room)
+            continue
+
+        for entry in all_entries:
+>>>>>>> Stashed changes
             existing = db.execute('''
                 SELECT id FROM AbsenceRecords 
                 WHERE date_absent = ? AND Lheure = ? AND Salle = ? AND Professeur = ?
@@ -648,21 +958,96 @@ def process_absence():
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (date_str, entry['Professeur'], entry['Semestre'], entry['Filiere'], 
                       entry['Groupe'], day_of_week, time_slot, room, entry['Module'], 'Non justifiée'))
+<<<<<<< Updated upstream
                 count += 1
 
     db.commit()
     flash(f"{count} absence(s) enregistrée(s) avec succès.", "success")
     return redirect(url_for('dashboard'))
+=======
+                count_new += 1
+                
+                # NOUVEAU : On garde en mémoire le nom du prof et le module pour le log
+                details_ajoutes.append(f"{entry['Professeur']} ({entry['Module']})")
+            else:
+                count_exist += 1
 
+    db.commit()
+
+    # --- LOG ULTRA DÉTAILLÉ ICI ---
+    if count_new > 0:
+        profs_concatenes = ", ".join(details_ajoutes)
+        log_activity('AJOUT', 'Absence', f"{count_new} absence(s) le {date_str} à {time_slot}. Concerne : {profs_concatenes}")
+    # ------------------------------
+
+    if count_new > 0:
+        flash(f"✅ {count_new} absence(s) enregistrée(s) avec succès.", "success")
+    if count_exist > 0:
+        flash(f"ℹ️ {count_exist} absence(s) étaient déjà enregistrées dans le système et ont été ignorées.", "info")
+    if rooms_with_no_class:
+        salles_vides_str = ", ".join(rooms_with_no_class)
+        flash(f"⚠️ Attention : Aucun cours n'était prévu dans la base pour ces salles : {salles_vides_str}.", "warning")
+
+    return redirect(request.referrer or url_for('dashboard'))
+>>>>>>> Stashed changes
+
+
+# --- 1. SUPPRESSION D'UNE SEULE ABSENCE ---
 @app.route('/delete_absence/<int:absence_id>', methods=['POST'])
 @login_required
 def delete_absence(absence_id):
     db = get_db()
+    # On récupère les infos AVANT de supprimer
+    absent = db.execute("SELECT Professeur, Module, date_absent, Lheure FROM AbsenceRecords WHERE id=?", (absence_id,)).fetchone()
+    
     db.execute("DELETE FROM AbsenceRecords WHERE id=?", (absence_id,))
     db.commit()
+    
+    # On écrit le Log
+    if absent:
+        desc = f"Annulation de l'absence de {absent['Professeur']} ({absent['Module']}) le {absent['date_absent']} à {absent['Lheure']}."
+        log_activity('SUPPRESSION', 'Absence', desc)
+    else:
+        log_activity('SUPPRESSION', 'Absence', f"Suppression de l'absence ID {absence_id}")
+        
     flash("Absence supprimée avec succès.", "info")
-    return redirect(url_for('dashboard'))
+    return redirect(request.referrer or url_for('dashboard'))
 
+
+# --- 2. SUPPRESSION MULTIPLE (Celle qui manquait !) ---
+@app.route('/delete_multiple_absences', methods=['POST'])
+@login_required
+def delete_multiple_absences():
+    db = get_db()
+    absence_ids = request.form.getlist('absence_ids')
+    
+    if not absence_ids:
+        flash("Aucune absence sélectionnée pour la suppression.", "warning")
+        return redirect(request.referrer)
+        
+    try:
+        # Création des '?' pour la requête SQL
+        placeholders = ','.join(['?'] * len(absence_ids))
+        
+        # 1. On lit les profs concernés pour le log
+        records = db.execute(f"SELECT Professeur FROM AbsenceRecords WHERE id IN ({placeholders})", absence_ids).fetchall()
+        profs_impliques = list(set([r['Professeur'] for r in records])) # Enlève les doublons
+        profs_str = ", ".join(profs_impliques)
+
+        # 2. On supprime tout d'un coup
+        db.execute(f"DELETE FROM AbsenceRecords WHERE id IN ({placeholders})", absence_ids)
+        db.commit()
+        
+        # 3. On enregistre le Log global
+        log_activity('SUPPRESSION', 'Absence', f"Suppression de {len(absence_ids)} absence(s) concernant : {profs_str}")
+        
+        flash(f"{len(absence_ids)} absence(s) supprimée(s) avec succès.", "success")
+    except Exception as e:
+        flash(f"Erreur lors de la suppression multiple : {str(e)}", "danger")
+        
+    return redirect(request.referrer or url_for('dashboard'))
+
+# --- API POUR TRAITER LES RATT EN FONCTION DES SALLES LIBRES ---
 @app.route('/ratt_session')
 @login_required
 def ratt_session():
@@ -747,32 +1132,35 @@ def view_schedule():
                            jours=jours, time_slots=time_slots, grid=grid, has_data=has_data, schedule_title=schedule_title)
 
 # --- GESTION DES Emplois de Temps ---
+# --- GESTION DES Emplois de Temps ---
 @app.route('/add_schedule', methods=['POST'])
 @login_required
 def add_schedule():
     db = get_db()
-    
     # Récupération des données du modal
     jour = request.form.get('jour')
     heure = request.form.get('heure')
-    prof = request.form.get('prof', '').strip().upper()
+    # CORRECTION ICI : On retire .upper() pour garder "Pr." intact !
+    prof = request.form.get('prof', '').strip() 
     module = request.form.get('module', '').strip()
     salle = request.form.get('salle', '').strip()
     filiere = request.form.get('filiere', '').strip()
     semestre = request.form.get('semestre', '').strip()
     groupe = request.form.get('groupe', '').strip()
-
+    
     if jour and heure and prof and filiere and semestre:
         db.execute("""
             INSERT INTO MasterSchedule (Jour, Lheure, Professeur, Module, Salle, Filiere, Semestre, groupe)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (jour, heure, prof, module, salle, filiere, semestre, groupe))
         db.commit()
+
+        # --- NOUVEAU : ENREGISTREMENT DU LOG ---
+        log_activity('AJOUT', 'Emploi du Temps', f"Nouveau cours pour {prof} en {salle} le {jour} à {heure}.")
+        # ---------------------------------------
         flash(f"Nouvelle séance ajoutée pour {prof} le {jour} à {heure}.", "success")
     else:
         flash("Erreur : Veuillez remplir les champs obligatoires (Filière, Semestre, Professeur).", "danger")
-        
-    # Magie : request.referrer permet de recharger la page exactement là où vous étiez !
     return redirect(request.referrer or url_for('view_schedule'))
 
 @app.route('/edit_schedule', methods=['POST'])
@@ -780,22 +1168,64 @@ def add_schedule():
 def edit_schedule():
     db = get_db()
     slot_id = request.form.get('slot_id')
-    new_prof = request.form.get('new_prof')
-    new_module = request.form.get('new_module')
+    new_prof = request.form.get('new_prof', '').strip()
+    new_module = request.form.get('new_module', '').strip()
+    new_salle = request.form.get('new_salle', '').strip()
     
-    if slot_id and new_prof:
-        # On met à jour l'emploi du temps principal avec les bons noms de colonnes
+    if slot_id:
+        # 1. On récupère l'ancienne séance pour voir ce qui va changer
+        old_record = db.execute("SELECT Professeur, Module, Salle FROM MasterSchedule WHERE rowid = ?", (slot_id,)).fetchone()
+        
+        # 2. On met à jour TOUTES les valeurs (Prof, Module, Salle)
         db.execute("""
             UPDATE MasterSchedule 
-            SET Professeur = ?, Module = ?
+            SET Professeur = ?, Module = ?, Salle = ?
             WHERE rowid = ?
-        """, (new_prof.strip().upper(), new_module, slot_id))
+        """, (new_prof, new_module, new_salle, slot_id))
         db.commit()
-        flash(f"La séance a été modifiée avec succès. Nouveau professeur : {new_prof}.", "success")
-    else:
-        flash("Erreur lors de la modification de la séance.", "danger")
         
-    return redirect(url_for('view_schedule'))
+        # 3. On crée un message de confirmation dynamique et intelligent !
+        chagements = []
+        if old_record:
+            if old_record['Professeur'] != new_prof:
+                chagements.append(f"Professeur ➔ {new_prof}")
+            if old_record['Salle'] != new_salle:
+                chagements.append(f"Salle ➔ {new_salle}")
+            if old_record['Module'] != new_module:
+                chagements.append(f"Module ➔ {new_module}")
+        
+        # S'il y a eu des modifications réelles
+        if chagements:
+            details = ", ".join(chagements)
+
+            # --- NOUVEAU : ENREGISTREMENT DU LOG ---
+            log_activity('MODIFICATION', 'Emploi du Temps', f"Mise à jour du cours ID {slot_id}. Changements : {details}")
+            # ---------------------------------------
+            flash(f"✅ Séance mise à jour avec succès. Modifications : {details}", "success")
+        else:
+            flash("ℹ️ Séance enregistrée (aucun changement détecté).", "info")
+            
+    else:
+        flash("Erreur lors de la modification : ID de la séance manquant.", "danger")
+        
+    return redirect(request.referrer or url_for('view_schedule'))
+
+@app.route('/delete_schedule/<int:slot_id>', methods=['POST'])
+@login_required
+def delete_schedule(slot_id):
+    db = get_db()
+    cours = db.execute("SELECT Professeur, Module, Jour FROM MasterSchedule WHERE rowid = ?", (slot_id,)).fetchone()
+    desc = f"Suppression du cours de {cours['Professeur']} ({cours['Module']}) le {cours['Jour']}." if cours else f"Suppression de l'ID {slot_id}."
+    try:
+        db.execute("DELETE FROM MasterSchedule WHERE rowid = ?", (slot_id,))
+        db.commit()
+        # --- NOUVEAU : ENREGISTREMENT DU LOG ---
+        log_activity('SUPPRESSION', 'Emploi du Temps', desc)
+        # ---------------------------------------
+        flash("Séance supprimée avec succès.", "success")
+    except Exception as e:
+        flash(f"Erreur lors de la suppression : {str(e)}", "danger")
+    return redirect(request.referrer or url_for('view_schedule'))
 
 # --- SUPPRESSION D'UNE SÉANCE ---
 @app.route('/delete_schedule/<int:slot_id>', methods=['POST'])
@@ -844,6 +1274,10 @@ def manage_holidays():
                 db.execute("INSERT INTO Holidays (date_start, date_end, description, type_holiday) VALUES (?, ?, ?, ?)", 
                            (d_start, d_end, h_desc, h_type))
                 db.commit()
+
+                # --- LOG ---
+                log_activity('AJOUT', 'Calendrier', f"Nouvelle période : {h_desc} (du {d_start} au {d_end})")
+                # ----------------
                 flash("Période exceptionnelle ajoutée avec succès.", "success")
             else:
                 flash("Erreur : La date de fin doit être après la date de début.", "danger")
@@ -862,6 +1296,9 @@ def delete_holiday(h_id):
     # CORRECTION ICI : On supprime la ligne en utilisant le fameux "rowid" caché
     db.execute("DELETE FROM Holidays WHERE rowid = ?", (h_id,))
     db.commit()
+    # --- LOG  ---
+    log_activity('SUPPRESSION', 'Calendrier', f"Suppression d'une période exceptionnelle (ID: {h_id})")
+    # ----------------
     flash("Période exceptionnelle supprimée.", "success")
     return redirect(url_for('manage_holidays'))
 
@@ -872,9 +1309,13 @@ def delete_holiday(h_id):
 @login_required
 def delete_ratt(ratt_id):
     db = get_db()
+    cours = db.execute("SELECT Professeur, Module, date_ratt FROM RattSessions WHERE id = ?", (ratt_id,)).fetchone()
     try:
         db.execute("DELETE FROM RattSessions WHERE id = ?", (ratt_id,))
         db.commit()
+        # --- NOUVEAU : ENREGISTREMENT DU LOG ---
+        log_activity('SUPPRESSION', 'Rattrapage', f"Suppression du rattrapage de {cours['Professeur']} ({cours['Module']}) le {cours['date_ratt']}.")
+        # ---------------------------------------
         flash("Séance de rattrapage supprimée avec succès.", "success")
     except Exception as e:
         flash(f"Erreur lors de la suppression : {e}", "danger")
@@ -947,20 +1388,17 @@ def reset_semester():
     db.execute("DELETE FROM AbsenceRecords")
     db.execute("DELETE FROM RattSessions")
     db.execute("DELETE FROM MasterSchedule")
-    
-    # NOUVEAU : Vider aussi le calendrier des jours exceptionnels
-    try:
-        db.execute("DELETE FROM Holidays")
-    except:
-        pass # Au cas où la table n'a pas encore été créée
-        
+    db.execute("DELETE FROM Holidays")
     db.commit()
+    log_activity('SUPPRESSION', 'Semestre', "Réinitialisation complète du semestre (Absences, Rattrapages, Emploi du temps, Jours Exceptionnels).")
     flash("Le semestre a été entièrement réinitialisé.", "success")
     return redirect(url_for('settings'))
 
 
 # FIX 9: The networking code at the end is completed safely
 if __name__ == '__main__':
+    with app.app_context():
+     init_db()
     # L'astuce os.environ permet d'éviter le crash "NonUniqueNameException"
     # en empêchant Zeroconf de se lancer en double à cause du mode debug=True de Flask.
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
