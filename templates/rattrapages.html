@@ -32,11 +32,13 @@
                     <thead class="bg-light-gray text-navy text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">
                         <tr>
                             <th class="py-3 ps-4"><i class="far fa-calendar-alt me-2 text-gold"></i>Date</th>
-                            <th class="py-3"><i class="fas fa-chalkboard-teacher me-2 text-gold"></i>Professeur</th>
-                            <th class="py-3"><i class="fas fa-book me-2 text-gold"></i>Module</th>
-                            <th class="py-3"><i class="fas fa-book me-2 text-gold"></i>Groupe</th>
-                            <th class="py-3"><i class="fas fa-door-open me-2 text-gold"></i>Salle</th>
                             <th class="py-3"><i class="far fa-clock me-2 text-gold"></i>Créneau</th>
+                            <th class="py-3"><i class="fas fa-chalkboard-teacher me-2 text-gold"></i>Professeur</th>
+                            <th class="py-3"><i class="fas fa-bookmark me-2 text-gold"></i>Filiere</th>
+                            <th class="py-3"><i class="fas fa-regular fa-calendar me-2 text-gold"></i>Semestre</th>
+                            <th class="py-3"><i class="fas fa-book me-2 text-gold"></i>Module</th>
+                            <th class="py-3"><i class="fas fa-solid fa-user-group me-2 text-gold"></i>Groupe</th>
+                            <th class="py-3"><i class="fas fa-door-open me-2 text-gold"></i>Salle</th>
                             <th class="py-3 text-center"><i class="fas fa-cogs me-2 text-gold"></i>Action</th>
                         </tr>
                     </thead>
@@ -44,8 +46,19 @@
                         {% for r in rattrapages %}
                         <tr class="ratt-row">
                             <td class="ps-4 fw-600 text-dark">{{ r.date_ratt }}</td>
+                            <td>
+                                <span class="badge time-badge"><i class="far fa-clock me-1"></i>{{ r.Lheure }}</span>
+                            </td>
                             <td><strong class="text-navy">{{ r.Professeur }}</strong></td>
-                            
+
+                             <td class="text-muted">
+                                {{ r.filiere if 'Filiere' in r.keys() and r.Filiere else '<span class="fst-italic opacity-50">Non spécifié</span>'|safe }}
+                            </td>
+                            <td class="text-muted">
+                                {{ r.semestre if 'Semestre' in r.keys() and r.semestre else '<span class="fst-italic opacity-50">Non spécifié</span>'|safe }}
+                            </td>
+                           
+
                             <td class="text-muted">
                                 {{ r.Module if 'Module' in r.keys() and r.Module else '<span class="fst-italic opacity-50">Non spécifié</span>'|safe }}
                             </td>
@@ -62,9 +75,7 @@
                                 {% endif %}
                             </td>
                             
-                            <td>
-                                <span class="badge time-badge"><i class="far fa-clock me-1"></i>{{ r.Lheure }}</span>
-                            </td>
+                            
                             
                             <td class="text-center">
                                 <form action="{{ url_for('delete_ratt', ratt_id=r.id) }}" method="POST" 

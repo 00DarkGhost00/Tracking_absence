@@ -7,155 +7,129 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root { 
             --navy: #002147; 
             --gold: #C5A059; 
-            --gold-light: #fdfaf3;
-            --bg-light: #f8fafc; /* Gris très très clair pour le fond de page */
-            --sidebar-width: 270px;
-            --text-muted: #64748b;
+            --bg-light: #f4f7fa; 
+            --sidebar-width: 280px;
+            /* Couleurs des Pôles */
+            --color-analyse: #3b82f6;   /* Bleu */
+            --color-absences: #10b981;  /* Vert */
+            --color-rattrapage: #f59e0b; /* Orange */
+            --color-admin: #ef4444;      /* Rouge */
+            --color-params: #64748b;     /* Gris */
         }
 
         body { 
             background: var(--bg-light); 
-            margin: 0;
-            font-family: 'Poppins', sans-serif; /* Nouvelle police plus élégante */
+            font-family: 'Inter', sans-serif;
             color: #334155;
         }
 
-        /* --- SIDEBAR STYLING --- */
+        /* --- SIDEBAR STRUCTURE --- */
         .sidebar { 
             height: 100vh; 
             width: var(--sidebar-width); 
             position: fixed; 
-            top: 0;
-            left: 0;
-            background: #ffffff; /* Fond blanc pour faire ressortir le logo */
-            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.04); /* Ombre douce et moderne */
+            top: 0; left: 0;
+            background: #ffffff; 
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.03);
             z-index: 1000;
             display: flex;
             flex-direction: column;
         }
 
-        /* Mise en valeur du Logo */
-        .sidebar-brand {
-            padding: 35px 20px 25px;
-            text-align: center;
-            border-bottom: 1px solid #f1f5f9;
+        .sidebar-brand { padding: 25px; text-align: center; }
+        .sidebar-brand img { max-width: 100px; }
+
+        /* --- SECTION TITLES (SUB-MENU TRIGGERS) --- */
+        .menu-header {
+            padding: 12px 20px;
+            margin: 5px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            text-decoration: none !important;
         }
 
-        .sidebar-brand img {
-            max-width: 140px; /* Logo plus grand */
-            height: auto;
-            margin-bottom: 15px;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05)); /* Légère ombre sous le logo */
-            transition: transform 0.3s ease;
+        .header-content { display: flex; align-items: center; }
+        .header-icon {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            margin-right: 12px;
+            font-size: 0.9rem;
+            color: white;
         }
 
-        .sidebar-brand img:hover {
-            transform: scale(1.03); /* Petit effet au passage de la souris */
-        }
-
-        .sidebar-brand h4 {
-            font-size: 1.05rem;
+        .header-title {
+            font-size: 0.8rem;
             font-weight: 700;
-            color: var(--navy);
-            margin: 0;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        /* Liens de navigation */
-        .nav-links {
-            padding: 20px 0;
-            overflow-y: auto; /* Scroll si l'écran est petit */
-        }
+        /* Couleurs spécifiques par section */
+        .section-analyse { color: var(--color-analyse); }
+        .section-analyse .header-icon { background: var(--color-analyse); box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3); }
 
-        .sidebar a { 
-            color: var(--text-muted); 
-            padding: 14px 25px; 
-            display: flex; 
-            align-items: center;
-            text-decoration: none; 
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
+        .section-absences { color: var(--color-absences); }
+        .section-absences .header-icon { background: var(--color-absences); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
+
+        .section-rattrapage { color: var(--color-rattrapage); }
+        .section-rattrapage .header-icon { background: var(--color-rattrapage); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3); }
+
+        .section-admin { color: var(--color-admin); }
+        .section-admin .header-icon { background: var(--color-admin); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
+
+        .section-params { color: var(--color-params); }
+        .section-params .header-icon { background: var(--color-params); box-shadow: 0 4px 10px rgba(100, 116, 139, 0.3); }
+
+        /* --- SUB-MENU LINKS --- */
+        .submenu { list-style: none; padding-left: 55px; margin-bottom: 10px; }
+        .submenu a {
+            display: block;
+            padding: 8px 0;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.88rem;
             font-weight: 500;
-            border-left: 4px solid transparent; /* Prépare la bordure pour ne pas décaler le texte */
-            margin: 4px 15px; /* Marge pour faire un effet "bouton/pilule" */
-            border-radius: 8px;
+            transition: color 0.2s;
         }
+        .submenu a:hover, .submenu a.active { color: var(--navy); font-weight: 600; }
 
-        .sidebar a i {
-            width: 30px;
-            font-size: 1.1rem;
-            transition: color 0.3s ease;
-        }
+        /* Chevron Animation */
+        .menu-header[aria-expanded="true"] .chevron { transform: rotate(90deg); }
+        .chevron { transition: transform 0.3s; font-size: 0.7rem; opacity: 0.5; }
 
-        /* Effet au survol */
-        .sidebar a:hover { 
-            background: #f1f5f9; 
-            color: var(--navy); 
-            transform: translateX(4px); /* Petit décalage vers la droite très fluide */
-        }
-
-        .sidebar a:hover i {
-            color: var(--navy);
-        }
-
-        /* Effet du lien Actif (La page actuelle) */
-        .sidebar a.active { 
-            background: var(--gold-light); 
-            color: var(--navy); 
-            border-left: 4px solid var(--gold);
-            font-weight: 600;
-            box-shadow: 0 2px 4px rgba(197, 160, 89, 0.1);
-        }
-
-        .sidebar a.active i {
-            color: var(--gold);
-        }
-
-        /* Bouton déconnexion stylisé différemment en bas */
-        .nav-links .logout-btn {
+        /* --- FOOTER --- */
+        .sidebar-footer {
             margin-top: auto;
-            color: #ef4444;
+            padding: 20px;
+            background: linear-gradient(to top, #f8fafc, transparent);
+            border-top: 1px solid #f1f5f9;
         }
-        .nav-links .logout-btn:hover {
-            background: #fef2f2;
-            color: #dc2626;
+        .footer-content {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            text-align: center;
+            line-height: 1.4;
         }
+        .footer-content strong { color: var(--navy); letter-spacing: 1px; }
 
-        /* --- MAIN CONTENT AREA --- */
-        .main { 
-            margin-left: var(--sidebar-width); 
-            padding: 40px; 
-            min-height: 100vh;
-        }
+        .main { margin-left: var(--sidebar-width); padding: 40px; min-height: 100vh; }
 
-        /* Notifications (Flash messages) repensées */
-        .alert {
-            border: none;
-            border-radius: 10px;
-            font-weight: 500;
-        }
-        .alert-success { background-color: #ecfdf5; color: #065f46; border-left: 4px solid #10b981; }
-        .alert-warning { background-color: #fffbeb; color: #92400e; border-left: 4px solid #f59e0b; }
-        .alert-danger { background-color: #fef2f2; color: #991b1b; border-left: 4px solid #ef4444; }
-
-        /* --- RESPONSIVE MOBILE --- */
-        @media (max-width: 768px) {
-            .sidebar { width: 80px; }
-            .sidebar-brand { padding: 20px 10px; }
-            .sidebar-brand img { max-width: 50px; }
-            .sidebar-brand h4, .sidebar a span { display: none; }
-            .sidebar a { justify-content: center; padding: 15px 0; margin: 5px 10px; }
-            .sidebar a i { width: auto; margin: 0; }
-            .sidebar a:hover { transform: none; }
-            .main { margin-left: 80px; padding: 20px; }
+        .logout-pill {
+            background: #fef2f2; color: #ef4444;
+            padding: 10px 20px; border-radius: 8px;
+            margin: 10px 15px; text-align: center;
+            font-size: 0.85rem; font-weight: 600; text-decoration: none; display: block;
         }
     </style>
 </head>
@@ -163,79 +137,114 @@
 
     <div class="sidebar">
         <div class="sidebar-brand">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo ESEF">
-            <h4>Portail ESEF</h4>
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ESEF">
         </div>
-        
-        <div class="nav-links d-flex flex-column" style="height: calc(100vh - 160px);">
-            
+
+        <div class="nav-links overflow-auto">
             {% set user_role = session.get('role', 'admin') %}
 
-            {% if user_role in ['admin', 'manager'] %}
-            <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' }}">
-                <i class="fas fa-edit"></i> <span>Saisie des Absences</span>
-            </a>
-            {% endif %}
+            <div class="menu-header section-analyse" data-bs-toggle="collapse" data-bs-target="#menuAnalyse">
+                <div class="header-content">
+                    <div class="header-icon"><i class="fas fa-chart-pie"></i></div>
+                    <span class="header-title">Analyse & Rapports</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+            <div class="collapse show" id="menuAnalyse">
+                <ul class="submenu">
+                    <li><a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Tableau de Bord</a></li>
+                    <li><a href="{{ url_for('view_schedule') }}" class="{{ 'active' if request.endpoint == 'view_schedule' }}">Emploi du Temps</a></li>
+                </ul>
+            </div>
 
-            {% if user_role in ['admin', 'manager','compta'] %}
-            <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">
-                <i class="fas fa-chart-pie"></i> <span>Tableau de Bord</span>
-            </a>
-            {% endif %}
+            <div class="menu-header section-absences" data-bs-toggle="collapse" data-bs-target="#menuAbsences">
+                <div class="header-content">
+                    <div class="header-icon"><i class="fas fa-user-check"></i></div>
+                    <span class="header-title">Gestion Absences</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+            <div class="collapse show" id="menuAbsences">
+                <ul class="submenu">
+                    {% if user_role in ['admin', 'manager'] %}
+                    <li><a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' }}">Saisie Absence</a></li>
+                    {% endif %}
+                    <li><a href="{{ url_for('prof_status') }}" class="{{ 'active' if request.endpoint == 'prof_status' }}">Statut Professeur</a></li>
+                    <li><a href="{{ url_for('professors_list') }}" class="{{ 'active' if request.endpoint == 'professors_list' }}">Recherche & Heures</a></li>
+                </ul>
+            </div>
 
-            {% if user_role in ['admin', 'manager'] %}
-            <a href="{{ url_for('view_schedule') }}" class="{{ 'active' if request.endpoint == 'view_schedule' }}">
-                 <i class="fas fa-calendar-alt"></i> <span>Emploi du Temps</span>
-            </a>
-
-            {% endif %}
+            <div class="menu-header section-rattrapage" data-bs-toggle="collapse" data-bs-target="#menuRatt">
+                <div class="header-content">
+                    <div class="header-icon"><i class="fas fa-clock-rotate-left"></i></div>
+                    <span class="header-title">Suivi Rattrapage</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+            <div class="collapse" id="menuRatt">
+                <ul class="submenu">
+                    {% if user_role in ['admin', 'manager'] %}
+                    <li><a href="{{ url_for('ratt_session') }}" class="{{ 'active' if request.endpoint == 'ratt_session' }}">Nouveau Rattrapage</a></li>
+                    {% endif %}
+                    <li><a href="{{ url_for('rattrapages_list') }}" class="{{ 'active' if request.endpoint == 'rattrapages_list' }}">Historique Complet</a></li>
+                </ul>
+            </div>
 
             {% if user_role == 'admin' %}
-            <a href="{{ url_for('manage_holidays') }}" class="{{ 'active' if request.endpoint == 'manage_holidays' }}">
-                <i class="fas fa-calendar-times"></i> <span>Jours Exceptionnels</span> 
-            </a>
+            <div class="menu-header section-admin" data-bs-toggle="collapse" data-bs-target="#menuAdmin">
+                <div class="header-content">
+                    <div class="header-icon"><i class="fas fa-shield-halved"></i></div>
+                    <span class="header-title">Administration</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+            <div class="collapse" id="menuAdmin">
+                <ul class="submenu">
+                    <li><a href="{{ url_for('manage_users') }}" class="{{ 'active' if request.endpoint == 'manage_users' }}">Utilisateurs</a></li>
+                    <li><a href="{{ url_for('manage_donnees') }}" class="{{ 'active' if request.endpoint == 'manage_donnees' }}">Référentiels (Bases)</a></li>
+                    <li><a href="{{ url_for('manage_holidays') }}" class="{{ 'active' if request.endpoint == 'manage_holidays' }}">Congés & Fériés</a></li>
+                    <li><a href="{{ url_for('view_logs') }}" class="{{ 'active' if request.endpoint == 'view_logs' }}">Journal Système</a></li>
+                </ul>
+            </div>
             {% endif %}
 
-            <a href="{{ url_for('prof_status') }}" class="{{ 'active' if request.endpoint == 'prof_status' }}">
-                <i class="fas fa-id-badge"></i> <span>Statut Professeur</span>
-            </a>
-            <a href="{{ url_for('professors_list') }}" class="{{ 'active' if request.endpoint == 'professors_list' }}">
-                <i class="fas fa-search"></i> <span>Recherche & Heures</span>
-            </a>
+            <div class="menu-header section-params" data-bs-toggle="collapse" data-bs-target="#menuParams">
+                <div class="header-content">
+                    <div class="header-icon"><i class="fas fa-sliders"></i></div>
+                    <span class="header-title">Paramètres</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+            <div class="collapse" id="menuParams">
+                <ul class="submenu">
+                    <li><a href="{{ url_for('profile') }}" class="{{ 'active' if request.endpoint == 'profile' }}">Mon Profil</a></li>
+                </ul>
+            </div>
 
-            {% if user_role in ['admin', 'manager'] %}
-            <a href="{{ url_for('ratt_session') }}" class="{{ 'active' if request.endpoint == 'ratt_session' }}">
-                <i class="fas fa-plus-circle"></i> <span>Nouvelle Session Ratt.</span>
+            <a href="{{ url_for('logout') }}" class="logout-pill mt-4">
+                <i class="fas fa-power-off me-2"></i> Déconnexion
             </a>
-            <a href="{{ url_for('rattrapages_list') }}" class="{{ 'active' if request.endpoint == 'rattrapages_list' }}">
-                <i class="fas fa-scroll"></i> <span>Historique Rattrapages</span>
-            </a>
-            {% endif %}
+        </div>
 
-            {% if user_role == 'admin' %}
-            <a href="{{ url_for('manage_data') }}" class="{{ 'active' if request.endpoint == 'manage_data' }}">
-                <i class="fas fa-cog"></i> <span>Paramètres</span>
-            </a>
-            {% endif %}
-            
-            <a href="{{ url_for('logout') }}" class="logout-btn mt-auto">
-                <i class="fas fa-power-off"></i> <span>Déconnexion ({{ session.get('username')|capitalize }})</span>
-            </a>
+        <div class="sidebar-footer">
+            <div class="footer-content">
+                <strong>ÉSEF Kenitra</strong><br>
+                <span>Système de Gestion Numérique</span><br>
+                <span class="opacity-50">A.Cadi - v2.1.0 © 2025</span>
+            </div>
         </div>
     </div>
 
     <div class="main">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="mb-4">
                 {% for category, message in messages %}
-                    {% set alert_class = category if category in ['success', 'danger', 'warning', 'info'] else 'info' %}
-                    <div class="alert alert-{{ alert_class }} alert-dismissible fade show shadow-sm" role="alert">
+                    <div class="alert alert-{{ category if category in ['success', 'danger', 'warning', 'info'] else 'info' }} alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
-                </div>
             {% endif %}
         {% endwith %}
         

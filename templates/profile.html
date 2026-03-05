@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="fw-bold text-navy"><i class="fas fa-id-card me-2"></i>Mon Espace Personnel</h3>
+            <p class="text-muted">Gérez vos informations personnelles et vos paramètres de sécurité.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-4 col-lg-5 mb-4">
+            <div class="card border-0 shadow-sm text-center p-4">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 100px; height: 100px; border: 3px solid var(--gold);">
+                            <i class="fas fa-user-tie fa-4x text-navy"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold mb-0">{{ user.full_name }}</h4>
+                    <p class="text-muted mb-3">@{{ user.username }}</p>
+                    <span class="badge bg-navy px-3 py-2 rounded-pill">
+                        <i class="fas fa-shield-alt me-1"></i> {{ user.role.upper() }}
+                    </span>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="row text-start">
+                        <div class="col-6 mb-3">
+                            <small class="text-muted d-block">Dernière connexion</small>
+                            <span class="fw-bold" style="font-size: 0.9rem;">Aujourd'hui</span>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <small class="text-muted d-block">Statut Compte</small>
+                            <span class="text-success fw-bold" style="font-size: 0.9rem;"><i class="fas fa-check-circle me-1"></i>Actif</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm mt-4 bg-navy text-white">
+                <div class="card-body">
+                    <h6><i class="fas fa-info-circle me-2 text-gold"></i>Note de sécurité</h6>
+                    <small style="opacity: 0.8;">Votre identifiant est lié à votre matricule académique. Pour tout changement d'identifiant, veuillez contacter le support technique de l'ESEF.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-8 col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <ul class="nav nav-tabs card-header-tabs" id="profileTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active fw-bold" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button">Informations Générales</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold text-danger" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button">Sécurité & Mot de passe</button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="tab-content" id="profileTabsContent">
+                            
+                            <div class="tab-pane fade show active" id="info" role="tabpanel">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold text-navy">Nom d'utilisateur</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light"><i class="fas fa-at"></i></span>
+                                            <input type="text" class="form-control bg-light" value="{{ user.username }}" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold text-navy">Nom Complet</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" name="full_name" class="form-control" value="{{ user.full_name }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mt-4">
+                                        <label class="form-label fw-bold text-navy">Email Professionnel (Institutionnel)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                            <input type="email" name="email" class="form-control" value="{{ user.email or '' }}" placeholder="nom.prenom@uit.ac.ma">
+                                        </div>
+                                        <div class="form-text text-muted">Utilisé pour les notifications de l'ERP.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="security" role="tabpanel">
+                                <div class="alert alert-warning border-0 shadow-sm">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Laissez ces champs vides si vous ne souhaitez pas modifier votre mot de passe actuel.
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Nouveau mot de passe</label>
+                                        <input type="password" name="password" class="form-control" placeholder="Minimum 8 caractères">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Confirmer le mot de passe</label>
+                                        <input type="password" name="confirm_password" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="mt-5 border-top pt-4 text-end">
+                            <button type="reset" class="btn btn-light px-4 me-2 text-muted">Annuler</button>
+                            <button type="submit" class="btn btn-navy px-5">
+                                <i class="fas fa-save me-2"></i>Enregistrer les modifications
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-tabs .nav-link { border: none; color: #64748b; padding: 1rem 1.5rem; }
+    .nav-tabs .nav-link.active { color: var(--navy); border-bottom: 3px solid var(--gold); background: none; }
+    .text-gold { color: var(--gold); }
+    .btn-navy { background-color: var(--navy); color: white; transition: all 0.3s; }
+    .btn-navy:hover { background-color: #001630; color: var(--gold); transform: translateY(-2px); }
+</style>
+{% endblock %}
