@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portail Absence | ESEF</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -137,7 +136,9 @@
 
     <div class="sidebar">
         <div class="sidebar-brand">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ESEF">
+            <a href="{{ url_for('dashboard') }}">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ESEF">
+            </a>
         </div>
 
         <div class="nav-links overflow-auto">
@@ -193,7 +194,7 @@
             {% if user_role == 'admin' %}
             <div class="menu-header section-admin" data-bs-toggle="collapse" data-bs-target="#menuAdmin">
                 <div class="header-content">
-                    <div class="header-icon"><i class="fas fa-shield-halved"></i></div>
+                    <div class="header-icon"><i class="fas fa-shield"></i></div>
                     <span class="header-title">Administration</span>
                 </div>
                 <i class="fas fa-chevron-right chevron"></i>
