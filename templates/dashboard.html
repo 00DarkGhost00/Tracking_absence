@@ -25,17 +25,18 @@
 
     <div class="row g-4 mb-5">
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm bg-white h-100 stat-card">
+            <div class="card border-0 shadow-sm text-white h-100 stat-card card-filter bg-grad-prof" 
+                 onclick="filterByValue('{{ top_prof['Professeur'] if top_prof else '' }}')">
                 <div class="card-body p-4 position-relative overflow-hidden">
-                    <div class="icon-bg-watermark text-danger"><i class="fas fa-user-tie"></i></div>
+                    <div class="icon-bg-watermark text-white opacity-10"><i class="fas fa-user-tie"></i></div>
                     <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h6 class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">Prof le plus absent</h6>
-                        <div class="icon-circle-small bg-danger bg-opacity-10 text-danger"><i class="fas fa-exclamation-triangle"></i></div>
+                        <h6 class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">Prof le plus absent</h6>
+                        <div class="icon-circle-small bg-white bg-opacity-25"><i class="fas fa-exclamation-triangle"></i></div>
                     </div>
-                    <h4 class="fw-bold text-navy text-truncate mb-1" title="{{ top_prof['Professeur'] if top_prof else 'N/A' }}">
+                    <h4 class="fw-bold text-truncate mb-1" title="{{ top_prof['Professeur'] if top_prof else 'N/A' }}">
                         {{ top_prof['Professeur'] if top_prof else 'Aucune donnée' }}
                     </h4>
-                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">
+                    <span class="badge bg-white bg-opacity-25 border border-white border-opacity-25 px-2 py-1">
                         {{ top_prof['c'] if top_prof else 0 }} absences cumulées
                     </span>
                 </div>
@@ -43,17 +44,18 @@
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm bg-white h-100 stat-card">
+            <div class="card border-0 shadow-sm text-white h-100 stat-card card-filter bg-grad-filiere" 
+                 onclick="filterByValue('{{ top_filiere['Filiere'] if top_filiere else '' }}')">
                 <div class="card-body p-4 position-relative overflow-hidden">
-                    <div class="icon-bg-watermark text-warning"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="icon-bg-watermark text-white opacity-10"><i class="fas fa-graduation-cap"></i></div>
                     <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h6 class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">Filière la plus impactée</h6>
-                        <div class="icon-circle-small bg-warning bg-opacity-10 text-warning"><i class="fas fa-chart-bar"></i></div>
+                        <h6 class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">Filière la plus impactée</h6>
+                        <div class="icon-circle-small bg-white bg-opacity-25"><i class="fas fa-chart-bar"></i></div>
                     </div>
-                    <h4 class="fw-bold text-navy text-truncate mb-1">
+                    <h4 class="fw-bold text-truncate mb-1">
                         {{ top_filiere['Filiere'] if top_filiere else 'Aucune donnée' }}
                     </h4>
-                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">
+                    <span class="badge bg-white bg-opacity-25 border border-white border-opacity-25 px-2 py-1">
                         {{ top_filiere['c'] if top_filiere else 0 }} séances perdues
                     </span>
                 </div>
@@ -61,22 +63,23 @@
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm bg-white h-100 stat-card">
+            <div class="card border-0 shadow-sm text-white h-100 stat-card card-filter bg-grad-day" 
+                 onclick="filterByDay('{{ top_day['Jour'] if top_day else '' }}')">
                 <div class="card-body p-4 position-relative overflow-hidden">
-                    <div class="icon-bg-watermark text-info"><i class="fas fa-calendar-times"></i></div>
+                    <div class="icon-bg-watermark text-white opacity-10"><i class="fas fa-calendar-times"></i></div>
                     <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h6 class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">Jour le plus critique</h6>
-                        <div class="icon-circle-small bg-info bg-opacity-10 text-info"><i class="fas fa-calendar-day"></i></div>
+                        <h6 class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">Jour le plus critique</h6>
+                        <div class="icon-circle-small bg-white bg-opacity-25"><i class="fas fa-calendar-day"></i></div>
                     </div>
-                    <h4 class="fw-bold text-navy mb-1">
+                    <h4 class="fw-bold mb-1">
                         {{ top_day['Jour'] if top_day else 'Aucune donnée' }}
                     </h4>
                     {% if top_day %}
-                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1">
+                    <span class="badge bg-white bg-opacity-25 border border-white border-opacity-25 px-2 py-1">
                         {{ top_day['c'] }} absences le {{ top_day['Jour']|lower }}
                     </span>
                     {% else %}
-                    <span class="text-muted small fw-600">Données insuffisantes</span>
+                    <span class="text-white-50 small fw-600">Données insuffisantes</span>
                     {% endif %}
                 </div>
             </div>
@@ -110,18 +113,15 @@
         </div>
         
         <div class="bg-light-gray px-4 py-3 border-bottom d-flex gap-3 flex-wrap align-items-center">
-            
             <div class="flex-grow-1" style="min-width: 200px;">
                 <div class="input-group input-group-sm shadow-sm rounded">
                     <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
                     <input type="text" id="filterText" class="form-control border-start-0 ps-0 fw-500" placeholder="Chercher un prof, module, filière...">
                 </div>
             </div>
-            
             <div style="width: 150px;">
                 <input type="date" id="filterDate" class="form-control form-control-sm shadow-sm text-muted fw-500" title="Filtrer par date précise">
             </div>
-            
             <div style="width: 160px;">
                 <select id="filterTime" class="form-select form-select-sm shadow-sm text-muted fw-500">
                     <option value="">Tous les créneaux</option>
@@ -130,7 +130,6 @@
                     <option value="15h00 - 18h00">15h00 - 18h00</option>
                 </select>
             </div>
-            
             <div>
                 <button id="resetFilters" class="btn btn-sm btn-outline-secondary shadow-sm px-3" title="Effacer les filtres">
                     <i class="fas fa-times"></i>
@@ -139,7 +138,6 @@
         </div>
 
         <form id="bulkDeleteForm" action="{{ url_for('delete_multiple_absences') }}" method="POST">
-            
             <div id="bulkActionContainer" class="bg-danger bg-opacity-10 border-bottom border-danger px-4 py-2 d-none d-flex justify-content-between align-items-center">
                 <span class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-2"></i> <span id="selectedCount">0</span> absence(s) sélectionnée(s)</span>
                 <button type="submit" class="btn btn-sm btn-danger fw-bold shadow-sm" onclick="return confirm('Attention, vous allez supprimer définitivement les absences sélectionnées. Continuer ?');">
@@ -166,7 +164,7 @@
                         </thead>
                         <tbody class="border-top-0">
                             {% for record in recent_absences %}
-                            <tr class="absence-row">
+                            <tr class="absence-row" data-day-name="{{ record.date_absent | get_day_name }}">
                                 <td class="ps-3">
                                     <input class="form-check-input row-checkbox shadow-sm" type="checkbox" name="absence_ids" value="{{ record.id }}">
                                 </td>
@@ -207,7 +205,6 @@
                                 </td>
                             </tr>
                             {% endfor %}
-                            
                             <tr id="noResultRow" style="display: none;">
                                 <td colspan="8" class="text-center py-5 text-muted">
                                     <div class="opacity-25 mb-2"><i class="fas fa-search fa-3x"></i></div>
@@ -231,6 +228,15 @@
         --border-color: #e2e8f0;
     }
 
+    /* Styles pour les Gradients des Cartes */
+    .bg-grad-prof { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+    .bg-grad-filiere { background: linear-gradient(135deg, #f39c12 0%, #d35400 100%); }
+    .bg-grad-day { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
+
+    /* Effet au survol des cartes filtres */
+    .card-filter { cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .card-filter:hover { transform: translateY(-8px); box-shadow: 0 12px 20px rgba(0,0,0,0.2) !important; }
+
     body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; }
     .academic-title { font-family: 'Playfair Display', serif; font-weight: 700; letter-spacing: -0.5px; }
     .tracking-wide { letter-spacing: 1.5px; font-weight: 600; font-size: 0.75rem; }
@@ -243,9 +249,7 @@
     .bg-light-gray { background-color: var(--light-gray); }
 
     .academic-card { border-radius: 12px; overflow: hidden; }
-    
     .stat-card { border-radius: 16px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1) !important; }
     
     .icon-circle-small { width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
     .icon-bg-watermark { position: absolute; right: -15px; bottom: -20px; font-size: 100px; opacity: 0.04; transform: rotate(-15deg); pointer-events: none; }
@@ -266,14 +270,14 @@
 </style>
 
 <script>
+    // Variable pour le filtre par jour
+    let activeDayFilter = null;
+
     document.addEventListener('DOMContentLoaded', function() {
-        
-        // --- GESTION DES FILTRES ---
         const filterText = document.getElementById('filterText');
         const filterDate = document.getElementById('filterDate');
         const filterTime = document.getElementById('filterTime');
         const resetBtn = document.getElementById('resetFilters');
-        
         const rows = document.querySelectorAll('.absence-row');
         const noResultRow = document.getElementById('noResultRow');
 
@@ -290,17 +294,18 @@
                 const rowFiliere = row.querySelector('.row-filiere').textContent.toLowerCase();
                 const rowModule = row.querySelector('.row-module').textContent.toLowerCase();
                 const rowTime = row.querySelector('.row-time').textContent.trim();
+                const rowDayName = row.getAttribute('data-day-name') ? row.getAttribute('data-day-name').toLowerCase() : "";
 
                 let matchesText = (textVal === "") || rowProf.includes(textVal) || rowFiliere.includes(textVal) || rowModule.includes(textVal);
                 let matchesDate = (dateVal === "") || (rowDate === dateVal);
                 let matchesTime = (timeVal === "") || rowTime.includes(timeVal);
+                let matchesDay = (activeDayFilter === null) || (rowDayName === activeDayFilter.toLowerCase());
 
-                if (matchesText && matchesDate && matchesTime) {
+                if (matchesText && matchesDate && matchesTime && matchesDay) {
                     row.style.display = '';
                     visibleCount++;
                 } else {
                     row.style.display = 'none';
-                    // Décocher les cases cachées par sécurité
                     row.querySelector('.row-checkbox').checked = false;
                 }
             });
@@ -310,7 +315,24 @@
             } else {
                 noResultRow.style.display = 'none';
             }
-            updateActionMenu(); // Met à jour le menu rouge si on cache des éléments cochés
+            updateActionMenu();
+        }
+
+        // --- Fonctions de filtrage par carte ---
+        window.filterByValue = function(val) {
+            if(!val) return;
+            filterText.value = val;
+            activeDayFilter = null; // Reset jour si on filtre par texte
+            applyFilters();
+            filterText.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        window.filterByDay = function(day) {
+            if(!day) return;
+            activeDayFilter = day;
+            filterText.value = ""; // Clear texte pour voir toutes les absences du jour J
+            applyFilters();
+            filterText.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         filterText.addEventListener('input', applyFilters);
@@ -319,9 +341,9 @@
 
         resetBtn.addEventListener('click', () => {
             filterText.value = ''; filterDate.value = ''; filterTime.value = '';
+            activeDayFilter = null;
             applyFilters();
         });
-
 
         // --- GESTION DE LA SÉLECTION MULTIPLE ---
         const selectAllCheckbox = document.getElementById('selectAllCheckbox');
@@ -332,12 +354,9 @@
         function updateActionMenu() {
             let count = 0;
             rowCheckboxes.forEach(cb => {
-                // Ne compter que les cases qui sont cochées ET visibles (non filtrées)
                 if (cb.checked && cb.closest('tr').style.display !== 'none') count++;
             });
-            
             countSpan.textContent = count;
-            
             if (count > 0) {
                 actionContainer.classList.remove('d-none');
             } else {
@@ -346,11 +365,9 @@
             }
         }
 
-        // Clic sur "Tout cocher"
         selectAllCheckbox.addEventListener('change', function() {
             const isChecked = this.checked;
             rowCheckboxes.forEach(cb => {
-                // Ne cocher que les lignes visibles par le filtre !
                 if (cb.closest('tr').style.display !== 'none') {
                     cb.checked = isChecked;
                 }
@@ -358,7 +375,6 @@
             updateActionMenu();
         });
 
-        // Clic sur une ligne individuelle
         rowCheckboxes.forEach(cb => {
             cb.addEventListener('change', updateActionMenu);
         });
