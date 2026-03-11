@@ -2,6 +2,7 @@
 
 {% block content %}
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 <style>
     :root {
@@ -10,7 +11,6 @@
         --border-color: #e2e8f0;
         --p-color: #0ea5e9; 
         --v-color: #f59e0b; 
-        /* Vibrant Metric Colors */
         --abs-red: #dc2626;   
         --ratt-blue: #2563eb;  
         --comp-green: #059669; 
@@ -45,12 +45,10 @@
         margin-bottom: 5px;
     }
 
-    /* Text Colors for Values */
     .val-comp { color: var(--comp-green) !important; }
     .val-abs { color: var(--abs-red) !important; }
     .val-ratt { color: var(--ratt-blue) !important; }
 
-    /* BLACK DYNAMIC BADGE */
     .count-badge-black {
         background-color: #000;
         color: #fff;
@@ -63,7 +61,7 @@
 
     .page-header {
         background: white;
-        padding: 0.8rem 1.2rem;
+        padding: 1rem 1.2rem;
         border-radius: 10px;
         margin-bottom: 1.2rem;
         border: 1px solid var(--border-color);
@@ -85,11 +83,8 @@
         padding: 5px; border-radius: 8px; background: #f8fafc; border: 1px solid #f1f5f9; text-align: center;
     }
     .mini-stat label { display: block; font-size: 0.58rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
-    
-    /* Default span style, will be overridden by classes below */
     .mini-stat span { font-weight: 700; color: #475569; }
 
-    /* PROGRESS BAR COLORS */
     .bg-custom-success { background-color: var(--comp-green) !important; }
     .bg-custom-warning { background-color: var(--warn-gold) !important; }
     .bg-custom-danger { background-color: var(--abs-red) !important; }
@@ -99,11 +94,19 @@
         color: var(--navy); border-radius: 8px; text-decoration: none; display: block; text-align: center;
     }
     .btn-view:hover { background: var(--navy); color: white; }
+
+    /* Style spécifique pour le bouton d'activation Admin */
+    .admin-toggle-box {
+        background: #fff9eb;
+        padding: 5px 12px;
+        border-radius: 8px;
+        border: 1px solid #ffeeba;
+    }
 </style>
 
 <div class="container-fluid py-3">
     
-   <div class="summary-bar shadow-sm">
+    <div class="summary-bar shadow-sm">
         <div class="row align-items-center">
             <div class="col-md-4 summary-item">
                 <small>Global Realization</small>
@@ -122,25 +125,39 @@
         </div>
     </div>
 
-    <div class="page-header d-flex justify-content-between align-items-center shadow-sm">
+    <div class="page-header d-flex justify-content-between align-items-center shadow-sm flex-wrap gap-3">
         <h6 class="fw-700 text-navy mb-0">
             Professors List 
             <span id="dynamicCount" class="count-badge-black">{{ data|length }}</span>
         </h6>
-        <div class="d-flex gap-2">
-            <select id="typeFilter" class="form-select form-select-sm" style="width: 130px; border-radius: 8px;">
+
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+
+            {% if user_role == 'admin' or (user_role == 'compta' and export_status == 'visible') %}
+            <div id="exportWrapper">
+                <a href="{{ url_for('export_professors') }}" class="btn btn-sm btn-success d-flex align-items-center shadow-sm" 
+                   style="border-radius: 8px; font-weight: 700; font-size: 0.75rem; background-color: #107c41; border: none; padding: 8px 15px;">
+                    <i class="fas fa-file-excel me-2"></i> EXPORT EXCEL
+                </a>
+            </div>
+            {% endif %}
+
+            <select id="typeFilter" class="form-select form-select-sm" style="width: 120px; border-radius: 8px;">
                 <option value="ALL">All Status</option>
                 <option value="Permanent">Permanent</option>
                 <option value="Vacataire">Vacataire</option>
             </select>
-            <input type="text" id="pSearch" class="form-control form-control-sm" style="width: 180px; border-radius: 8px;" placeholder="Search name...">
+            <div class="position-relative">
+                <input type="text" id="pSearch" class="form-control form-control-sm ps-4" style="width: 160px; border-radius: 8px;" placeholder="Search name...">
+                <i class="fas fa-search position-absolute text-muted" style="left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.7rem;"></i>
+            </div>
         </div>
     </div>
 
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3" id="pGrid">
         {% for p in data %}
         <div class="col prof-card" data-status="{{ p.status }}">
-            <div class="prof-card-compact p-3 h-100 d-flex flex-column">
+            <div class="prof-card-compact p-3 h-100 d-flex flex-column shadow-sm">
                 
                 <div class="d-flex align-items-center mb-3">
                     <div class="status-indicator {% if 'Permanent' in p.status %}dot-p{% else %}dot-v{% endif %}" title="{{ p.status }}"></div>
@@ -170,7 +187,7 @@
                          style="width: {{ perc }}%; min-width: 2px;"></div>
                 </div>
 
-                <div class="mt-3">
+                <div class="mt-auto pt-3">
                     <a href="{{ url_for('professor_details', prof_name=p.name) }}" class="btn-view">View Records</a>
                 </div>
             </div>
@@ -180,6 +197,8 @@
 </div>
 
 <script>
+
+    // 2. RECHERCHE ET FILTRES
     const pSearch = document.getElementById('pSearch');
     const typeFilter = document.getElementById('typeFilter');
     const dynamicCount = document.getElementById('dynamicCount');
@@ -206,7 +225,8 @@
         dynamicCount.textContent = count;
     }
 
-    pSearch.addEventListener('keyup', filterData);
-    typeFilter.addEventListener('change', filterData);
+    if (pSearch) pSearch.addEventListener('keyup', filterData);
+    if (typeFilter) typeFilter.addEventListener('change', filterData);
 </script>
+
 {% endblock %}

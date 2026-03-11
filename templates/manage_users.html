@@ -21,7 +21,8 @@
                     <div class="d-flex justify-content-between">
                         <div>
                             <h6 class="text-uppercase small fw-bold opacity-75">Administrateurs</h6>
-                            <h3 class="mb-0">1</h3> </div>
+                            <h3 class="mb-0">1</h3> 
+                        </div>
                         <i class="fas fa-user-shield fa-2x opacity-25"></i>
                     </div>
                 </div>
@@ -128,6 +129,67 @@
         </div>
     </div>
 </div>
+
+{% for u in users %}
+<div class="modal fade" id="editModal{{ u.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="{{ url_for('update_user', user_id=u.id) }}" method="POST" class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-light border-bottom-0">
+                <h5 class="modal-title fw-bold text-navy">
+                    <i class="fas fa-user-edit me-2"></i>Modifier Utilisateur
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body p-4">
+                <div class="mb-4 d-flex align-items-center bg-light p-3 rounded">
+                    <div class="avatar-erp me-3 bg-white">{{ u.full_name[0]|upper }}</div>
+                    <div>
+                        <h6 class="mb-0 fw-bold">{{ u.full_name }}</h6>
+                        <small class="text-muted">@{{ u.username }} • Rôle: {{ u.role|upper }}</small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Adresse Email</label>
+                    <div class="input-group input-group-sm shadow-sm">
+                        <span class="input-group-text bg-white"><i class="fas fa-envelope text-muted"></i></span>
+                        <input type="email" name="email" class="form-control" value="{{ u.email or '' }}" required>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-muted small text-uppercase">Nouveau Mot de passe</label>
+                    <div class="input-group input-group-sm shadow-sm mb-1">
+                        <span class="input-group-text bg-white"><i class="fas fa-lock text-muted"></i></span>
+                        <input type="password" name="password" class="form-control" placeholder="Laisser vide pour ne pas modifier">
+                    </div>
+                    <small class="text-danger" style="font-size: 0.7rem;"><i class="fas fa-info-circle me-1"></i>Attention, ceci écrasera l'ancien mot de passe.</small>
+                </div>
+            </div>
+            
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold text-muted small text-uppercase">Rôle Système</label>
+                <div class="input-group input-group-sm shadow-sm">
+                    <span class="input-group-text bg-white"><i class="fas fa-user-shield text-muted"></i></span>
+                    <select name="role" class="form-select">
+                        <option value="manager" {% if u.role == 'manager' %}selected{% endif %}>Manager</option>
+                        <option value="compta" {% if u.role == 'compta' %}selected{% endif %}>Compta</option>
+                        <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Administrateur</option>
+                    </select>
+                </div>
+            </div>
+
+
+            <div class="modal-footer bg-light border-top-0">
+                <button type="button" class="btn btn-outline-secondary btn-sm fw-bold" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-navy btn-sm fw-bold px-4">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
 
 <style>
     .bg-navy { background-color: #002b5c !important; }

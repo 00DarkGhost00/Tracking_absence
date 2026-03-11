@@ -206,6 +206,8 @@
                     <li><a href="{{ url_for('manage_donnees') }}" class="{{ 'active' if request.endpoint == 'manage_donnees' }}">Référentiels (Bases)</a></li>
                     <li><a href="{{ url_for('manage_holidays') }}" class="{{ 'active' if request.endpoint == 'manage_holidays' }}">Congés & Fériés</a></li>
                     <li><a href="{{ url_for('view_logs') }}" class="{{ 'active' if request.endpoint == 'view_logs' }}">Journal Système</a></li>
+                    <li><a href="{{ url_for('manage_data') }}" class="{{ 'active' if request.endpoint == 'manage_data' }}">Paramètres Système</a></li>
+                   
                 </ul>
             </div>
             {% endif %}
