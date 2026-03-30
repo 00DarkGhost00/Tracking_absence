@@ -89,6 +89,265 @@ def close_connection(e):
     db = getattr(g, '_database', None)
     if db is not None: db.close()
 
+<<<<<<< Updated upstream
+=======
+
+# Creation des utilisateurs par défaut
+@app.route('/admin/utilisateurs', methods=['GET', 'POST'])
+@login_required
+def manage_users():
+    # Sécurité : Seul le rôle 'admin' peut voir cette page
+    if session.get('role') != 'admin':
+        flash("Accès interdit : Réservé à l'administrateur.", "danger")
+        return redirect(url_for('dashboard'))
+
+    db = get_db()
+    if request.method == 'POST':
+        username = request.form.get('username').lower().strip()
+        password = request.form.get('password')
+        role = request.form.get('role')
+        email = request.form.get('email')
+        full_name = request.form.get('full_name')
+
+        try:
+            hashed_pw = generate_password_hash(password)
+            db.execute("INSERT INTO Users (username, password, full_name, role, email) VALUES (?, ?, ?, ?, ?)",
+                       (username, hashed_pw, full_name, role, email))
+            db.commit()
+            flash(f"L'utilisateur {username} a été créé !", "success")
+        except:
+            flash("Erreur : Ce nom d'utilisateur existe déjà.", "danger")
+
+    users = db.execute("SELECT id, username, full_name, role, email FROM Users").fetchall()
+    return render_template('manage_users.html', users=users)
+
+# --- SUPPRIMER UN UTILISATEUR ---
+@app.route('/admin/delete_user/<int:user_id>')
+@login_required
+def delete_user(user_id):
+    if session.get('role') != 'admin': return redirect(url_for('dashboard'))
+    
+    db = get_db()
+    # On empêche l'admin de se supprimer lui-même par erreur
+    if user_id == session.get('user_id'):
+        flash("Action impossible : Vous ne pouvez pas supprimer votre propre compte.", "danger")
+        return redirect(url_for('manage_users'))
+        
+    db.execute("DELETE FROM Users WHERE id = ?", (user_id,))
+    db.commit()
+    log_activity('SUPPRESSION', 'Sécurité', f"Utilisateur  {user_id} supprimé")
+    flash("Utilisateur supprimé avec succès.", "success")
+    return redirect(url_for('manage_users'))
+
+# --- MODIFIER UN UTILISATEUR (Email, Rôle ou Password) ---
+@app.route('/admin/update_user/<int:user_id>', methods=['POST'])
+@login_required
+def update_user(user_id):
+    if session.get('role') != 'admin': return redirect(url_for('dashboard'))
+    
+    db = get_db()
+    new_email = request.form.get('email')
+    new_password = request.form.get('password')
+    new_role = request.form.get('role') # Nouveau champ récupéré
+    
+    # Mise à jour de l'email et du rôle
+    db.execute("UPDATE Users SET email = ?, role = ? WHERE id = ?", (new_email, new_role, user_id))
+    
+    # Si un mot de passe a été saisi, on le hache et on l'enregistre
+    if new_password and len(new_password) > 0:
+        hashed_pw = generate_password_hash(new_password)
+        db.execute("UPDATE Users SET password = ? WHERE id = ?", (hashed_pw, user_id))
+        flash("Email, Rôle et Mot de passe mis à jour.", "success")
+    else:
+        flash("Email et Rôle mis à jour.", "info")
+
+    log_activity('MODIFICATION', 'Sécurité', f"Utilisateur {user_id} mis à jour (Email/Rôle/Mot de passe)")    
+    db.commit()
+    return redirect(url_for('manage_users'))
+
+
+# =======================================================
+# GESTION DES DONNÉES DE BASE (LE COEUR DE L'APPLICATION)
+# =======================================================
+
+def init_core_tables():
+    db = get_db()
+    db.execute("CREATE TABLE IF NOT EXISTS Filieres (nom TEXT PRIMARY KEY)")
+    db.execute("CREATE TABLE IF NOT EXISTS Semestres (nom TEXT PRIMARY KEY)")
+    # Modification : La table Modules a maintenant filiere et semestre
+    db.execute("""CREATE TABLE IF NOT EXISTS Modules (
+                  nom TEXT PRIMARY KEY,
+                  filiere TEXT,
+                  semestre TEXT)""")
+    db.execute("CREATE TABLE IF NOT EXISTS Groupes (nom TEXT PRIMARY KEY)")
+    db.execute("CREATE TABLE IF NOT EXISTS Professors (name TEXT PRIMARY KEY, status TEXT DEFAULT 'Vacataire')")
+    db.commit()
+    
+    # MIGRATION : Si la table Modules existait déjà sans les colonnes, on les ajoute
+    try:
+        db.execute("ALTER TABLE Modules ADD COLUMN filiere TEXT")
+        db.execute("ALTER TABLE Modules ADD COLUMN semestre TEXT")
+        db.commit()
+    except:
+        pass # Les colonnes existent déjà
+
+
+# Route pour gérer les données de base (Filières, Semestres, Modules, Groupes, Professeurs)
+@app.route('/donnees')
+@login_required
+def manage_donnees():
+    init_core_tables() # S'assure que les nouvelles colonnes existent
+    db = get_db()
+    
+    filieres = db.execute("SELECT nom FROM Filieres ORDER BY nom").fetchall()
+    semestres = db.execute("SELECT nom FROM Semestres ORDER BY nom").fetchall()
+    
+    # On récupère maintenant TOUTES les informations du module
+    modules = db.execute("SELECT nom, filiere, semestre FROM Modules ORDER BY nom").fetchall()
+    
+    groupes = db.execute("SELECT nom FROM Groupes ORDER BY nom").fetchall()
+    professeurs = db.execute("SELECT name, status FROM Professors ORDER BY name").fetchall()
+    
+    return render_template('donnees.html', 
+                           filieres=filieres, 
+                           semestres=semestres, 
+                           modules=modules, 
+                           groupes=groupes, 
+                           professeurs=professeurs)
+
+
+
+#   Route pour ajouter une nouvelle donnée (Filière, Semestre, Module, Groupe, Professeur)
+@app.route('/add_donnee', methods=['POST'])
+@login_required
+def add_donnee():
+    db = get_db()
+    type_donnee = request.form.get('type')
+    valeur = request.form.get('valeur', '').strip()
+    status = request.form.get('status', 'Vacataire') # Pour profs
+    
+    # Nouveaux champs pour les modules
+    filiere = request.form.get('filiere')
+    semestre = request.form.get('semestre')
+
+    if not valeur:
+        flash("La valeur ne peut pas être vide.", "warning")
+        return redirect(url_for('manage_donnees'))
+
+    try:
+        if type_donnee == 'Filiere': 
+            db.execute("INSERT INTO Filieres (nom) VALUES (?)", (valeur,))
+        elif type_donnee == 'Semestre': 
+            db.execute("INSERT INTO Semestres (nom) VALUES (?)", (valeur,))
+        elif type_donnee == 'Module': 
+            # On enregistre le module AVEC sa filière et son semestre
+            db.execute("INSERT INTO Modules (nom, filiere, semestre) VALUES (?, ?, ?)", (valeur, filiere, semestre))
+        elif type_donnee == 'Groupe': 
+            db.execute("INSERT INTO Groupes (nom) VALUES (?)", (valeur,))
+        elif type_donnee == 'Professeur': 
+            db.execute("INSERT INTO Professors (name, status) VALUES (?, ?)", (valeur, status))
+
+
+        # --- LOG ---
+        log_activity('AJOUT', 'Données de Base', f"Ajout de '{valeur}' à la catégorie {type_donnee} par {session.get('username', 'Admin')}")
+        # ---- -----
+        db.commit()
+        flash(f"{type_donnee} ajouté avec succès.", "success")
+    except sqlite3.IntegrityError:
+        flash(f"Cette valeur existe déjà.", "danger")
+    except Exception as e:
+        flash(f"Erreur : {str(e)}", "danger")
+
+    return redirect(url_for('manage_donnees')) # Modifiez si votre route a un autre nom
+    
+# Route pour supprimer une donnée (Filière, Semestre, Module, Groupe, Professeur)
+@app.route('/delete_donnee/<type_donnee>/<valeur>', methods=['POST'])
+@login_required
+def delete_donnee(type_donnee, valeur):
+    # Sécurité Admin
+    if session.get('role') != 'admin':
+        return redirect(url_for('dashboard'))
+
+    db = get_db()
+    try:
+        if type_donnee == 'Filiere': 
+            db.execute("DELETE FROM Filieres WHERE nom = ?", (valeur,))
+            # Optionnel : Mettre à NULL les modules liés à cette filière si on la supprime
+            # db.execute("UPDATE Modules SET filiere = NULL WHERE filiere = ?", (valeur,))
+            
+        elif type_donnee == 'Semestre': 
+            db.execute("DELETE FROM Semestres WHERE nom = ?", (valeur,))
+            
+        elif type_donnee == 'Module': 
+            db.execute("DELETE FROM Modules WHERE nom = ?", (valeur,))
+            
+        elif type_donnee == 'Groupe': 
+            db.execute("DELETE FROM Groupes WHERE nom = ?", (valeur,))
+            
+        elif type_donnee == 'Professeur': 
+            db.execute("DELETE FROM Professors WHERE name = ?", (valeur,))
+            
+        db.commit()
+        
+        # --- LOG ---
+        username = session.get('username', 'Admin')
+        log_activity('SUPPRESSION', 'Données de Base', f"Suppression de '{valeur}' de la catégorie {type_donnee} par {username}")
+        # -----------
+        
+        flash(f"{valeur} a été retiré des {type_donnee}s.", "success")
+    except Exception as e:
+        flash(f"Erreur lors de la suppression: {str(e)}", "danger")
+    
+    return redirect(url_for('manage_donnees'))
+
+
+# ==========================================
+# SYSTÈME DE LOGS (JOURNAL D'ACTIVITÉS)
+# ==========================================
+def init_log_table():
+    db = get_db()
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS ActivityLogs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME,
+            user_name TEXT,  /* NOUVELLE COLONNE POUR L'UTILISATEUR */
+            action_type TEXT,
+            entity_type TEXT,
+            description TEXT
+        )
+    """)
+    # On s'assure que la colonne existe si la table était déjà créée
+    try:
+        db.execute("ALTER TABLE ActivityLogs ADD COLUMN user_name TEXT DEFAULT 'Système'")
+    except:
+        pass
+    db.commit()
+
+def log_activity(action_type, entity_type, description):
+    init_log_table()
+    db = get_db()
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # On récupère le nom de l'utilisateur connecté (modifiez 'username' si vous utilisez une autre clé de session)
+    try:
+        utilisateur_actuel = session.get('username', 'Admin') # Ou current_user.username si vous utilisez Flask-Login
+    except:
+        utilisateur_actuel = "Système"
+
+    db.execute("INSERT INTO ActivityLogs (timestamp, user_name, action_type, entity_type, description) VALUES (?, ?, ?, ?, ?)",
+               (now, utilisateur_actuel, action_type.upper(), entity_type, description))
+    db.commit()
+
+@app.route('/logs')
+@login_required
+def view_logs():
+    init_log_table()
+    db = get_db()
+    # On récupère les 500 dernières actions
+    logs = db.execute("SELECT * FROM ActivityLogs ORDER BY timestamp DESC LIMIT 500").fetchall()
+    return render_template('logs.html', logs=logs)
+
+>>>>>>> Stashed changes
 # --- STATS LOGIC ---
 def get_stats_for_prof(prof_name):
     db = get_db()
@@ -172,6 +431,125 @@ def get_theoretical_sessions_count(db, day_of_week_fr, sem_start_str, sem_end_st
     return count
 
 
+<<<<<<< Updated upstream
+=======
+try:
+    locale.setlocale(locale.LC_TIME, "fr_FR.utf8") # Pour Linux/Mac
+except:
+    try:
+        locale.setlocale(locale.LC_TIME, "French_France.1252") # Pour Windows
+    except:
+        pass # Garde la langue par défaut si échec
+
+# Export Liste Professeurs (Excel)
+@app.route('/export_professors')
+@login_required
+def export_professors():
+    db = get_db()
+    
+    # Sécurisation de la casse (majuscules/minuscules)
+    user_role = session.get('role', '').lower()
+
+    # BARRIÈRE 1: Vérification du Rôle (admin ou compta)
+    if user_role not in ['admin', 'compta']:
+        flash("Vous n'avez pas l'autorisation d'exporter ces données.", "danger")
+        return redirect(url_for('professors_list'))
+    
+    # BARRIÈRE 2: Vérification si l'Admin a autorisé l'export
+    status = db.execute("SELECT value FROM Config WHERE key='export_visibility'").fetchone()
+    # Si on est 'compta' et que c'est masqué, on interdit l'accès
+    if user_role == 'compta' and (not status or status['value'] == 'hidden'):
+        flash("L'exportation est actuellement désactivée par l'administrateur.", "warning")
+        return redirect(url_for('professors_list'))
+    
+    # 1. Récupérer les dates du semestre pour le calcul théorique
+    s_row = db.execute("SELECT value FROM Config WHERE key='sem_start'").fetchone()
+    e_row = db.execute("SELECT value FROM Config WHERE key='sem_end'").fetchone()
+    start_str = s_row['value'] if s_row else "2025-10-06"
+    end_str = e_row['value'] if e_row else "2025-12-27"
+
+    # 2. Récupérer tous les professeurs
+    all_profs = db.execute('SELECT name, status FROM Professors ORDER BY name').fetchall()
+    
+    export_data = []
+
+    for row in all_profs:
+        name = row['name']
+        status = row['status']
+        
+        # Calcul des heures théoriques
+        schedule = db.execute("SELECT Jour FROM MasterSchedule WHERE UPPER(TRIM(Professeur)) = ?", (name,)).fetchall()
+        scheduled_days = [r['Jour'] for r in schedule]
+        
+        theo_hrs = 0
+        if scheduled_days:
+            day_counts = Counter(scheduled_days)
+            for day, count in day_counts.items():
+                valid_sessions = get_theoretical_sessions_count(db, day, start_str, end_str)
+                theo_hrs += (valid_sessions * count * 3)
+        
+        # Calcul des absences
+        abs_count = db.execute("SELECT COUNT(*) FROM AbsenceRecords WHERE UPPER(TRIM(Professeur)) = ?", (name,)).fetchone()[0]
+        abs_h = abs_count * 3
+        
+        # Calcul des rattrapages
+        try:
+            ratt_count = db.execute("SELECT COUNT(*) FROM RattSessions WHERE UPPER(TRIM(Professeur)) = ?", (name,)).fetchone()[0]
+            ratt_h = ratt_count * 3
+        except:
+            ratt_h = 0
+
+        # Calcul du total réalisé
+        realized = (theo_hrs - abs_h) + ratt_h
+       
+        
+        # Ajouter les données à la liste d'export
+        export_data.append({
+            'Nom du Professeur': name,
+            'Statut': status,
+            'Heures Théoriques': theo_hrs,
+            'Heures Absences': abs_h,
+            'Heures Rattrapages': ratt_h,
+            'Heures Réalisées': realized,
+
+            'Période': f"{start_str} au {end_str}"
+        })
+   
+    # 3. Création du fichier Excel
+    df = pd.DataFrame(export_data)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='Esef _ ERP') as writer:
+        df.to_excel(writer, index=False, sheet_name='Suivi Professeurs')
+    
+    output.seek(0)
+    
+    # 4. ENREGISTREMENT DANS LES LOGS D'ACTIVITÉ
+    username = session.get('username', 'Inconnu')
+    log_activity('EXPORT', 'Base de données', f"Exportation Excel du suivi des professeurs par {username}.")
+    
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=f"Rapport_Complet_Professeurs_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
+    )
+
+# --- FILTRE JINJA2 POUR AFFICHER LE NOM DU JOUR EN FRANÇAIS ---
+@app.template_filter('get_day_name')
+def get_day_name_filter(date_str):
+    """ Transforme une date 'YYYY-MM-DD' en nom de jour 'Lundi' """
+    if not date_str:
+        return ""
+    try:
+        # On transforme la chaîne en objet date
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+        # On récupère le nom du jour (ex: Lundi)
+        return date_obj.strftime('%A').capitalize()
+    except Exception:
+        return date_str # Retourne la date brute en cas d'erreur
+
+
+>>>>>>> Stashed changes
 # --- CORE ROUTES ---
 
 @app.route('/')
@@ -183,6 +561,44 @@ def index():
     slots = ["8h30 - 11h30", "11h45 - 14h45", "15h00 - 18h00"]
     return render_template('index.html', rooms=rooms, time_slots=slots, today=datetime.now().strftime('%Y-%m-%d'))
 
+<<<<<<< Updated upstream
+=======
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    db = get_db()
+    user_id = session.get('user_id')
+
+    if request.method == 'POST':
+        full_name = request.form.get('full_name')
+        new_password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        # Mise à jour du nom
+        db.execute("UPDATE Users SET full_name = ? WHERE id = ?", (full_name, user_id))
+        
+        # Changement de mot de passe si rempli
+        if new_password:
+            if new_password == confirm_password:
+                hashed_pw = generate_password_hash(new_password)
+                db.execute("UPDATE Users SET password = ? WHERE id = ?", (hashed_pw, user_id))
+                flash("Profil et mot de passe mis à jour !", "success")
+            else:
+                flash("Les mots de passe ne correspondent pas.", "danger")
+        else:
+            flash("Profil mis à jour.", "info")
+        
+        db.commit()
+        session['full_name'] = full_name # Rafraîchir la session
+
+    user = db.execute("SELECT * FROM Users WHERE id = ?", (user_id,)).fetchone()
+    return render_template('profile.html', user=user)
+
+
+
+# DASHBOARD AVEC NOUVEAU KPI : JOUR LE PLUS CRITIQUE (LE PLUS D'ABSENCES)
+>>>>>>> Stashed changes
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -378,7 +794,165 @@ def manage_data():
     return render_template('manage.html', 
                            s=s_row['value'] if s_row else "2025-10-06", 
                            e=e_row['value'] if e_row else "2025-12-27",
+<<<<<<< Updated upstream
                            professors=prof_list)
+=======
+                           professors=prof_list,
+                           export_status=export_status) # <-- Envoyé au HTML ici
+
+
+# Toggle Export Visibility (AJOUTER CECI DANS APP.PY)
+@app.route('/toggle_export_status', methods=['POST'])
+@login_required
+def toggle_export_status():
+    # On convertit le rôle en minuscules pour éviter l'erreur 403 (Admin vs admin)
+    user_role = session.get('role', '').lower()
+    
+    if user_role != 'admin':
+        return jsonify({'status': 'error', 'message': 'Accès refusé'}), 403
+    
+    db = get_db()
+    current = db.execute("SELECT value FROM Config WHERE key='export_visibility'").fetchone()
+    
+    # Si c'était caché, on rend visible. Sinon on cache.
+    new_status = 'visible' if (not current or current['value'] == 'hidden') else 'hidden'
+    
+    db.execute("INSERT OR REPLACE INTO Config (key, value) VALUES ('export_visibility', ?)", (new_status,))
+    db.commit()
+    
+    # Essayer d'enregistrer dans les logs (ignore si la fonction n'existe pas)
+    try:
+        action_fr = "activé" if new_status == 'visible' else "désactivé"
+        log_activity('SÉCURITÉ', 'Paramètres', f"L'administrateur a {action_fr} l'Export Excel.")
+    except Exception:
+        pass
+    
+    return jsonify({'status': 'success', 'new_status': new_status})
+
+
+# --- GESTION DES CLASSES ET SALLES  ---
+@app.route('/admin/classes', methods=['GET', 'POST'])
+def manage_classes():
+    if session.get('role') != 'admin':
+        flash("Accès refusé.", "danger")
+        return redirect(url_for('dashboard'))
+
+    db = get_db()
+    
+    # 1. S'assurer que les tables existent
+    db.execute('''CREATE TABLE IF NOT EXISTS Salles (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL)''')
+    
+    # Nouvelle structure pour le futur (sans module ni semestre)
+    db.execute('''
+        CREATE TABLE IF NOT EXISTS Affectations_Futures (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filiere TEXT,
+            jour TEXT,
+            heure TEXT,
+            salle TEXT
+        )
+    ''')
+
+    # --- TRAITEMENT DES FORMULAIRES ---
+    if request.method == 'POST':
+        form_type = request.form.get('form_type')
+        
+        if form_type == 'add_class':
+            new_name = request.form.get('class_name').strip()
+            if new_name:
+                try:
+                    db.execute("INSERT INTO Salles (name) VALUES (?)", (new_name,))
+                    db.commit()
+                    flash(f"La salle '{new_name}' a été ajoutée.", "success")
+                except sqlite3.IntegrityError:
+                    flash("Cette salle existe déjà.", "danger")
+                    
+        elif form_type == 'add_affectation':
+            filiere = request.form.get('filiere')
+            jour = request.form.get('jour')
+            heure = request.form.get('heure')
+            salle = request.form.get('salle')
+            
+            conflit = db.execute("SELECT filiere FROM Affectations_Futures WHERE jour = ? AND heure = ? AND salle = ?", (jour, heure, salle)).fetchone()
+            
+            if conflit:
+                flash(f"Conflit : La salle {salle} est déjà affectée à {conflit['filiere']} ce jour-là.", "danger")
+            else:
+                db.execute("INSERT INTO Affectations_Futures (filiere, jour, heure, salle) VALUES (?, ?, ?, ?)", (filiere, jour, heure, salle))
+                db.commit()
+                flash("Affectation enregistrée.", "success")
+                
+        elif form_type == 'delete_affectation':
+            aff_id = request.form.get('affectation_id')
+            db.execute("DELETE FROM Affectations_Futures WHERE id = ?", (aff_id,))
+            db.commit()
+            flash("Affectation retirée.", "info")
+
+        elif form_type == 'clear_all_affectations':
+            db.execute("DELETE FROM Affectations_Futures")
+            db.commit()
+            log_activity('SUPPRESSION', 'Planificateur', "Le planificateur des salles a été vidé entièrement.")
+            flash("Le planificateur a été réinitialisé pour la nouvelle année.", "success")
+
+        return redirect(url_for('manage_classes'))
+
+    # --- PRÉPARATION DES DONNÉES ---
+    my_classes = [dict(row) for row in db.execute("SELECT id, name FROM Salles ORDER BY name").fetchall()]
+
+    try: current_schedule = [dict(row) for row in db.execute("SELECT * FROM MasterSchedule WHERE Salle IS NOT NULL AND Salle != ''").fetchall()]
+    except: current_schedule = []
+
+    future_schedules = [dict(row) for row in db.execute("SELECT * FROM Affectations_Futures").fetchall()]
+
+    try: filieres = [row['nom'] for row in db.execute("SELECT nom FROM Filieres ORDER BY nom").fetchall()]
+    except: filieres = ["Amazigh", "SMI", "SMP", "SMC"] 
+
+    creneaux = ["8h30 - 11h30", "11h45 - 14h45", "15h00 - 18h00"]
+    jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"]
+
+    return render_template('Classe.html', 
+                           classes=my_classes, 
+                           current_schedule=current_schedule,
+                           future_schedules=future_schedules,
+                           filieres=filieres,
+                           jours=jours,
+                           creneaux=creneaux)
+
+    # --- PRÉPARATION DES DONNÉES POUR L'AFFICHAGE ---
+    
+    # Toutes les salles
+    my_classes = [dict(row) for row in db.execute("SELECT id, name FROM Salles ORDER BY name").fetchall()]
+
+    # Emploi du temps ACTUEL (Sert uniquement pour l'onglet 2 : "Salles Vides" d'aujourd'hui)
+    try:
+        current_schedule = [dict(row) for row in db.execute("SELECT * FROM MasterSchedule WHERE Salle IS NOT NULL AND Salle != ''").fetchall()]
+    except:
+        current_schedule = []
+
+    # Emploi du temps FUTUR (Sert pour l'onglet 3 : Le planificateur)
+    future_schedules = [dict(row) for row in db.execute("SELECT * FROM Affectations_Futures").fetchall()]
+
+    # Récupérer la vraie liste des filières de votre base de données
+    try:
+        filieres = [row['nom'] for row in db.execute("SELECT nom FROM Filieres ORDER BY nom").fetchall()]
+    except:
+        filieres = ["Amazigh", "SMI", "Mathématiques"] # Fallback au cas où
+
+    creneaux = ["8h30 - 11h30", "11h45 - 14h45", "15h00 - 18h00"]
+    jours = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"]
+
+    return render_template('Classe.html', 
+                           classes=my_classes, 
+                           current_schedule=current_schedule,
+                           future_schedules=future_schedules,
+                           filieres=filieres,
+                           jours=jours,
+                           creneaux=creneaux)
+
+
+
+# --- GESTION DES STATUTS DES PROFESSEURS (PERMANENT / VACATAIRE) ---
+>>>>>>> Stashed changes
 
 @app.route('/prof_status', methods=['GET', 'POST'])
 @login_required
@@ -423,6 +997,7 @@ def toggle_status(name):
 @app.route('/api/available_rooms')
 @login_required
 def available_rooms():
+<<<<<<< Updated upstream
     db = get_db()
     date_str = request.args.get('date')
     time_slot = request.args.get('time_slot')
@@ -438,15 +1013,46 @@ def available_rooms():
         day_of_week = days[date_obj.weekday()]
 
         # 1. Salles habituelles (basées sur ce professeur ET ce module exact)
+=======
+    try:
+        db = get_db()
+        date_str = request.args.get('date')
+        time_slot = request.args.get('time_slot')
+        prof = request.args.get('prof', '').strip()
+        module = request.args.get('module', '').strip()
+
+        if not time_slot:
+            return jsonify({'usual': [], 'available': []})
+
+        # 1. Obtenir le jour de la semaine (Ex: "Lundi")
+        try:
+            if date_str:
+                date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+                days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+                day_of_week = days[date_obj.weekday()]
+            else:
+                day_of_week = ""
+        except Exception:
+            day_of_week = ""
+
+        # 2. Salles habituelles (Tolérance maximale aux espaces avec LIKE)
+>>>>>>> Stashed changes
         usual_rooms = []
         if prof and module:
-            u_res = db.execute("SELECT DISTINCT Salle FROM MasterSchedule WHERE Professeur = ? AND Module = ? AND Salle IS NOT NULL AND Salle != ''", (prof, module)).fetchall()
-            usual_rooms = [r['Salle'] for r in u_res]
+            # Les % autour permettent de trouver "Essahabi " même si on cherche "Essahabi"
+            u_res = db.execute("""
+                SELECT DISTINCT Salle 
+                FROM MasterSchedule 
+                WHERE Professeur LIKE ? AND Module LIKE ? 
+                AND Salle IS NOT NULL AND Salle != ''
+            """, (f"%{prof}%", f"%{module}%")).fetchall()
+            usual_rooms = [r['Salle'].strip() for r in u_res if r['Salle']]
 
-        # 2. Toutes les salles existantes
+        # 3. Toutes les salles existantes
         all_rooms_query = db.execute("SELECT DISTINCT Salle FROM MasterSchedule WHERE Salle IS NOT NULL AND Salle != ''").fetchall()
-        all_rooms = {r['Salle'] for r in all_rooms_query}
+        all_rooms = {r['Salle'].strip() for r in all_rooms_query if r['Salle']}
 
+<<<<<<< Updated upstream
         # 3. Salles occupées (Emploi du temps normal)
         occ_ms = db.execute("SELECT Salle FROM MasterSchedule WHERE Jour = ? AND Lheure = ?", (day_of_week, time_slot)).fetchall()
         occupied = {r['Salle'] for r in occ_ms if r['Salle']}
@@ -460,9 +1066,66 @@ def available_rooms():
         # 4. Salles libres (Toutes - Occupées)
         available = sorted(list(all_rooms - occupied))
         
+=======
+        # 4. Occupations et Salles Virtuelles (P-1 / P-2)
+        # On utilise LIKE pour être tolérant aux espaces dans les heures/jours
+        occ_ms = db.execute("""
+            SELECT Salle, Professeur, Module 
+            FROM MasterSchedule 
+            WHERE Jour LIKE ? AND Lheure LIKE ?
+        """, (f"%{day_of_week}%", f"%{time_slot}%")).fetchall()
+        
+        occupied = set()
+        virtual_rooms = set()
+        
+        poly_1 = ['PLOYVALENTE 1', 'POLYVALENTE 1']
+        poly_2 = ['PLOYVALENTE 2', 'POLYVALENTE 2']
+
+        prof_upper = prof.upper()
+        module_upper = module.upper()
+
+        def check_polyvalente(r):
+            if not r['Salle']: return
+            salle_clean = str(r['Salle']).strip()
+            p_clean = str(r['Professeur']).strip().upper()
+            m_clean = str(r['Module']).strip().upper()
+
+            # La salle physique est marquée occupée
+            occupied.add(salle_clean)
+
+            # Si c'est notre prof et notre module dans la Polyvalente, on débloque P-1 ou P-2
+            if salle_clean.upper() in poly_1 and prof_upper in p_clean and module_upper in m_clean:
+                virtual_rooms.add('P-1')
+            if salle_clean.upper() in poly_1 and prof_upper in p_clean and module_upper in m_clean:
+                virtual_rooms.add('P-1-1')
+            if salle_clean.upper() in poly_2 and prof_upper in p_clean and module_upper in m_clean:
+                virtual_rooms.add('P-2')
+            if salle_clean.upper() in poly_2 and prof_upper in p_clean and module_upper in m_clean:
+                virtual_rooms.add('P-2-1')
+
+        # Vérifier l'emploi du temps normal
+        for r in occ_ms:
+            check_polyvalente(r)
+
+        # Vérifier les rattrapages programmés ce jour-là
+        if date_str:
+            occ_ratt = db.execute("""
+                SELECT Salle, Professeur, Module 
+                FROM RattSessions 
+                WHERE date_ratt = ? AND Lheure LIKE ?
+            """, (date_str, f"%{time_slot}%")).fetchall()
+            for r in occ_ratt:
+                check_polyvalente(r)
+
+        # 5. Calcul Final
+        available = sorted(list((all_rooms | virtual_rooms) - occupied))
+        usual_rooms = list(set(usual_rooms)) # Enlever les doublons
+
+>>>>>>> Stashed changes
         return jsonify({'usual': usual_rooms, 'available': available})
+    
     except Exception as e:
-        print("Erreur API Salles:", e)
+        print(f"--- ERREUR CRITIQUE API SALLES : {str(e)} ---")
         return jsonify({'usual': [], 'available': []})
     
 # --- 1. MISE À JOUR DE L'API PROF_MODULES ---

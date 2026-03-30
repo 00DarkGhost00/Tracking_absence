@@ -171,10 +171,79 @@
             
             {% set user_role = session.get('role', 'admin') %}
 
+<<<<<<< Updated upstream
             {% if user_role in ['admin', 'manager'] %}
             <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' }}">
                 <i class="fas fa-edit"></i> <span>Saisie des Absences</span>
             </a>
+=======
+            <div class="menu-header section-analyse" data-bs-toggle="collapse" data-bs-target="#menuAnalyse">
+                <div class="header-content">
+                    <div class="header-icon"><i class="fas fa-chart-pie"></i></div>
+                    <span class="header-title">Analyse & Rapports</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+            <div class="collapse show" id="menuAnalyse">
+                <ul class="submenu">
+                    <li><a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Tableau de Bord</a></li>
+                    <li><a href="{{ url_for('view_schedule') }}" class="{{ 'active' if request.endpoint == 'view_schedule' }}">Emploi du Temps</a></li>
+                </ul>
+            </div>
+
+            <div class="menu-header section-absences" data-bs-toggle="collapse" data-bs-target="#menuAbsences">
+                <div class="header-content">
+                    <div class="header-icon"><i class="fas fa-user-check"></i></div>
+                    <span class="header-title">Gestion Absences</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+            <div class="collapse show" id="menuAbsences">
+                <ul class="submenu">
+                    {% if user_role in ['admin', 'manager'] %}
+                    <li><a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' }}">Saisie Absence</a></li>
+                    {% endif %}
+                    <li><a href="{{ url_for('prof_status') }}" class="{{ 'active' if request.endpoint == 'prof_status' }}">Statut Professeur</a></li>
+                    <li><a href="{{ url_for('professors_list') }}" class="{{ 'active' if request.endpoint == 'professors_list' }}">Recherche & Heures</a></li>
+                </ul>
+            </div>
+
+            <div class="menu-header section-rattrapage" data-bs-toggle="collapse" data-bs-target="#menuRatt">
+                <div class="header-content">
+                    <div class="header-icon"><i class="fas fa-clock-rotate-left"></i></div>
+                    <span class="header-title">Suivi Rattrapage</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+            <div class="collapse" id="menuRatt">
+                <ul class="submenu">
+                    {% if user_role in ['admin', 'manager'] %}
+                    <li><a href="{{ url_for('ratt_session') }}" class="{{ 'active' if request.endpoint == 'ratt_session' }}">Nouveau Rattrapage</a></li>
+                    <li><a href="{{ url_for('rattrapages_list') }}" class="{{ 'active' if request.endpoint == 'rattrapages_list' }}">Historique Complet</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            {% if user_role == 'admin' %}
+            <div class="menu-header section-admin" data-bs-toggle="collapse" data-bs-target="#menuAdmin">
+                <div class="header-content">
+                    <div class="header-icon"><i class="fas fa-shield"></i></div>
+                    <span class="header-title">Administration</span>
+                </div>
+                <i class="fas fa-chevron-right chevron"></i>
+            </div>
+            <div class="collapse" id="menuAdmin">
+                <ul class="submenu">
+                    <li><a href="{{ url_for('manage_users') }}" class="{{ 'active' if request.endpoint == 'manage_users' }}">Utilisateurs</a></li>
+                    <li><a href="{{ url_for('manage_donnees') }}" class="{{ 'active' if request.endpoint == 'manage_donnees' }}">Référentiels (Bases)</a></li>
+                    <li><a href="{{ url_for('manage_classes') }}" class="{{ 'active' if request.endpoint == 'manage_classes' }}">Salles & Classes</a></li>
+                    <li><a href="{{ url_for('manage_holidays') }}" class="{{ 'active' if request.endpoint == 'manage_holidays' }}">Congés & Fériés</a></li>
+                    <li><a href="{{ url_for('view_logs') }}" class="{{ 'active' if request.endpoint == 'view_logs' }}">Journal Système</a></li>
+                    <li><a href="{{ url_for('manage_data') }}" class="{{ 'active' if request.endpoint == 'manage_data' }}">Paramètres Système</a></li>
+                   
+                </ul>
+            </div>
+>>>>>>> Stashed changes
             {% endif %}
 
             {% if user_role in ['admin', 'manager','compta'] %}

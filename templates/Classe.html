@@ -1,0 +1,396 @@
+{% extends 'base.html' %} 
+
+{% block content %}
+<style>
+    .schedule-grid th { font-weight: 600; color: var(--navy); text-transform: uppercase; font-size: 0.85rem; }
+    .schedule-cell { min-width: 140px; vertical-align: top !important; }
+    .schedule-card { background-color: white; position: relative; font-size: 0.8rem; page-break-inside: avoid; }
+</style>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 text-gray-800" style="color: var(--navy); font-weight: 600;">
+            <i class="fas fa-chalkboard me-2"></i>Gestion & Occupation des Salles
+        </h2>
+    </div>
+
+    <ul class="nav nav-tabs mb-4 border-0" id="classTabs">
+        <li class="nav-item">
+            <button class="nav-link bg-light border-0 rounded-top fw-bold" data-bs-toggle="tab" data-bs-target="#manage" type="button" style="color: #64748b;">Salles Existantes</button>
+        </li>
+        <li class="nav-item ms-2">
+            <button class="nav-link active bg-white border-bottom-0 shadow-sm rounded-top fw-bold" data-bs-toggle="tab" data-bs-target="#empty" type="button" style="color: var(--navy);">Salles Libres & Occupées (Actuel)</button>
+        </li>
+        <li class="nav-item ms-2">
+            <button class="nav-link bg-light border-0 rounded-top fw-bold" data-bs-toggle="tab" data-bs-target="#filiere" type="button" style="color: #64748b;">Planificateur (Futur)</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade" id="manage" role="tabpanel">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card mb-4 border-0 shadow-sm" style="border-left: 4px solid var(--color-admin) !important;">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3" style="color: var(--navy);"><i class="fas fa-plus-circle text-success me-2"></i>Ajouter une Salle</h5>
+                            <form method="POST" action="{{ url_for('manage_classes') }}">
+                                <input type="hidden" name="form_type" value="add_class">
+                                <div class="mb-3"><input type="text" name="class_name" class="form-control bg-light border-0" placeholder="Ex: Amphi A, Salle 14..." required></div>
+                                <button type="submit" class="btn w-100 text-white" style="background-color: var(--navy);">Enregistrer</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-0">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead style="background-color: #f8fafc;"><tr><th class="px-4 py-3">ID</th><th class="px-4 py-3">NOM DE LA SALLE</th></tr></thead>
+                                <tbody>
+                                    {% for c in classes %}
+                                    <tr><td class="px-4">{{ c.id }}</td><td class="px-4"><strong style="color: var(--navy);">{{ c.name }}</strong></td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade show active" id="empty" role="tabpanel">
+            <div class="row">
+                <div class="col-xl-4 mb-4">
+                    <div class="card border-0 shadow-sm h-100" style="background-color: #f1f5f9;">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3" style="color: var(--navy);"><i class="fas fa-search-location me-2"></i>Salles Libres</h5>
+                            
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">1. Jour</label>
+                                <select id="searchDay" class="form-select border-0 shadow-sm" onchange="calculateActualEmptyRooms()">
+                                    <option value="Tous">Tous les jours</option>
+                                    {% for j in jours %}<option value="{{ j }}">{{ j }}</option>{% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label text-muted small fw-bold">2. Créneau Horaire</label>
+                                <select id="searchTime" class="form-select border-0 shadow-sm" onchange="calculateActualEmptyRooms()">
+                                    <option value="Tous">Tous les créneaux</option>
+                                    {% for c in creneaux %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+                                </select>
+                            </div>
+
+                            <button onclick="printArea('emptyRoomsResultList', 'Liste des Salles Libres')" class="btn w-100 btn-outline-secondary bg-white shadow-sm mb-3">
+                                <i class="fas fa-print me-2"></i>Imprimer les Salles Libres
+                            </button>
+
+                            <hr>
+                            <div id="emptyRoomsResultList" style="max-height: 400px; overflow-y: auto;" class="mt-3">
+                                <div class="text-center text-muted small">Sélectionnez un jour pour voir les salles.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-8">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-0 pt-4 pb-3 d-flex justify-content-between align-items-center">
+                            <h5 style="color: var(--navy); margin: 0;">Salles Occupées Actuellement</h5>
+                            <div class="d-flex gap-2">
+                                <select id="viewFiliereActual" class="form-select border-0 bg-light shadow-sm" onchange="renderActualSchedule()">
+                                    <option value="">-- Choisir une filière --</option>
+                                    {% for f in filieres %}<option value="{{ f }}">{{ f }}</option>{% endfor %}
+                                </select>
+                                <button onclick="printArea('actualScheduleContainer', 'Emploi du Temps - ' + document.getElementById('viewFiliereActual').value)" class="btn btn-secondary shadow-sm">
+                                    <i class="fas fa-print"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 600px; overflow: auto;" id="actualScheduleContainer">
+                                <div class="p-5 text-center text-muted">Sélectionnez une filière.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="filiere" role="tabpanel">
+            <div class="d-flex justify-content-end mb-3 gap-2">
+                <form method="POST" action="{{ url_for('manage_classes') }}" onsubmit="return confirm('Attention ! Voulez-vous vraiment effacer TOUTES les affectations futures ?');">
+                    <input type="hidden" name="form_type" value="clear_all_affectations">
+                    <button type="submit" class="btn btn-danger shadow-sm"><i class="fas fa-trash me-2"></i>Vider tout le planificateur</button>
+                </form>
+            </div>
+
+            <div class="row">
+                <div class="col-xl-3 mb-4">
+                    <div class="card border-0 shadow-sm h-100" style="background-color: #f8fafc; border-top: 4px solid #10b981 !important;">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3" style="color: var(--navy);"><i class="fas fa-link me-2"></i>Assigner une Salle</h5>
+                            
+                            <form method="POST" action="{{ url_for('manage_classes') }}">
+                                <input type="hidden" name="form_type" value="add_affectation">
+                                
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Filière Cible</label>
+                                    <select class="form-select border-0 shadow-sm" name="filiere" required>
+                                        <option value="">-- Choisir --</option>
+                                        {% for f in filieres %}<option value="{{ f }}">{{ f }}</option>{% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Jour</label>
+                                    <select name="jour" id="assignJour" class="form-select border-0 shadow-sm" onchange="updateFutureRoomSelect()" required>
+                                        <option value="">Jour</option>
+                                        {% for j in jours %}<option value="{{ j }}">{{ j }}</option>{% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small fw-bold">Heure</label>
+                                    <select name="heure" id="assignHeure" class="form-select border-0 shadow-sm" onchange="updateFutureRoomSelect()" required>
+                                        <option value="">Heure</option>
+                                        {% for c in creneaux %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label text-muted small fw-bold">Salles Disponibles</label>
+                                    <select name="salle" id="assignSalle" class="form-select border-0 shadow-sm fw-bold" required disabled>
+                                        <option value="">Choisissez Jour/Heure</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn w-100 text-white shadow-sm" style="background-color: #10b981; font-weight: 500;">
+                                    <i class="fas fa-save me-2"></i>Valider l'affectation
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-9">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white border-0 pt-4 pb-3 d-flex justify-content-between align-items-center">
+                            <h5 style="color: var(--navy); margin: 0;">Grille de Planification</h5>
+                            <div class="d-flex gap-2 w-50">
+                                <select id="viewFiliereFuture" class="form-select border-0 bg-light shadow-sm" onchange="renderFutureSchedule()">
+                                    <option value="ALL">🌟 VUE GLOBALE (Toutes les filières)</option>
+                                    {% for f in filieres %}<option value="{{ f }}">{{ f }}</option>{% endfor %}
+                                </select>
+                                <button onclick="printArea('futureScheduleContainer', 'Planificateur : ' + document.getElementById('viewFiliereFuture').value)" class="btn btn-secondary shadow-sm">
+                                    <i class="fas fa-print"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 600px; overflow: auto;" id="futureScheduleContainer">
+                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const allSalles = {{ classes | tojson | safe }};
+    const currentSchedule = {{ current_schedule | tojson | safe }};
+    const futureSchedule = {{ future_schedules | tojson | safe }};
+    const allJours = {{ jours | tojson | safe }};
+    const allCreneaux = {{ creneaux | tojson | safe }};
+
+    // Gestion de l'affichage des onglets
+    document.querySelectorAll('.nav-link').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.nav-link').forEach(t => { t.classList.remove('active', 'bg-white', 'shadow-sm'); t.classList.add('bg-light'); t.style.color = '#64748b'; });
+            this.classList.add('active', 'bg-white', 'shadow-sm'); this.classList.remove('bg-light'); this.style.color = 'var(--navy)';
+            if(this.dataset.bsTarget === '#filiere') { renderFutureSchedule(); }
+        });
+    });
+
+    // --- FONCTION D'IMPRESSION PARFAITE (Pleine Page, Sans coupure) ---
+    function printArea(divId, title) {
+        let content = document.getElementById(divId).innerHTML;
+        if(content.includes("Sélectionnez")) { alert("Veuillez d'abord générer des données avant d'imprimer."); return; }
+        
+        let win = window.open('', '_blank', 'width=1000,height=800');
+        win.document.write(`
+            <html>
+            <head>
+                <title>${title}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                    h2 { color: #002147; text-align: center; margin-bottom: 20px; text-transform: uppercase; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; page-break-inside: auto; }
+                    tr { page-break-inside: avoid; page-break-after: auto; }
+                    th, td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; vertical-align: top; }
+                    th { background-color: #f8fafc; color: #002147; -webkit-print-color-adjust: exact; }
+                    .schedule-card { border: 1px solid #e2e8f0; padding: 8px; margin-bottom: 8px; border-radius: 4px; page-break-inside: avoid; }
+                    .badge { display: inline-block; padding: 4px 8px; background: #002147; color: white; border-radius: 4px; font-size: 12px; margin-bottom: 4px; -webkit-print-color-adjust: exact; }
+                    .no-print, form { display: none !important; }
+                    .text-success { color: #10b981 !important; }
+                    .text-danger { color: #ef4444 !important; }
+                    .free-rooms-container { font-size: 12px; margin-top: 10px; padding-top: 5px; border-top: 1px dashed #cbd5e1; }
+                </style>
+            </head>
+            <body>
+                <h2>${title}</h2>
+                ${content}
+            </body>
+            </html>
+        `);
+        win.document.close();
+        win.focus();
+        setTimeout(() => { win.print(); win.close(); }, 500);
+    }
+
+    // --- ONGLET 2 : RECHERCHE SALLES LIBRES ---
+    function calculateActualEmptyRooms() {
+        const selectedDay = document.getElementById('searchDay').value;
+        const selectedTime = document.getElementById('searchTime').value;
+        const resultContainer = document.getElementById('emptyRoomsResultList');
+        
+        let joursToProcess = selectedDay === 'Tous' ? allJours : [selectedDay];
+        let timesToProcess = selectedTime === 'Tous' ? allCreneaux : [selectedTime];
+        let html = '';
+
+        joursToProcess.forEach(jour => {
+            timesToProcess.forEach(time => {
+                let occupiedSalles = currentSchedule.filter(s => s.Jour && s.Jour.includes(jour) && s.Lheure === time).map(s => s.Salle.trim());
+                let freeSalles = allSalles.filter(salle => !occupiedSalles.includes(salle.name));
+
+                html += `<div class="p-3 mb-2 bg-white rounded shadow-sm border-start border-4 border-info text-start schedule-card">
+                            <strong style="color:var(--navy);">${jour}</strong> - <small style="color:#64748b;">${time}</small><br>
+                            <div style="margin-top:8px;">
+                            ${freeSalles.length > 0 
+                                ? freeSalles.map(s => `<span class="badge border bg-light text-dark shadow-sm m-1">${s.name}</span>`).join('') 
+                                : '<span class="text-danger small"><strong>Toutes les salles sont occupées</strong></span>'
+                            }
+                            </div>
+                        </div>`;
+            });
+        });
+        resultContainer.innerHTML = html;
+    }
+
+    // --- ONGLET 2 : GRILLE DE L'EMPLOI DU TEMPS ACTUEL ---
+    function renderActualSchedule() {
+        const filiere = document.getElementById('viewFiliereActual').value;
+        const container = document.getElementById('actualScheduleContainer');
+        if (!filiere) { container.innerHTML = "<div class='p-5 text-center'>Sélectionnez une filière.</div>"; return; }
+
+        let filiereData = currentSchedule.filter(s => s.Filiere === filiere);
+        
+        let html = `<table class="table table-bordered schedule-grid text-center align-middle mb-0" style="min-width: 800px;">
+                        <thead style="background-color: #f8fafc;"><tr><th>Jour \\ Heure</th>`;
+        allCreneaux.forEach(c => html += `<th>${c}</th>`);
+        html += `</tr></thead><tbody>`;
+
+        allJours.forEach(jour => {
+            html += `<tr><th class="bg-light">${jour}</th>`;
+            allCreneaux.forEach(creneau => {
+                let cellData = filiereData.filter(s => s.Jour && s.Jour.includes(jour) && s.Lheure === creneau);
+                html += `<td class="schedule-cell p-2">`;
+                if (cellData.length > 0) {
+                    cellData.forEach(cours => {
+                        html += `
+                        <div class="schedule-card p-2 mb-2 rounded shadow-sm text-start border-start border-3 border-secondary">
+                            <span class="badge w-100 mb-1">${cours.Salle || 'Non assignée'}</span>
+                            <div class="fw-bold text-truncate" title="${cours.Module}">${cours.Module || '-'}</div>
+                            <div class="d-flex justify-content-between mt-1 text-muted" style="font-size: 0.7rem;">
+                                <span>Sem: ${cours.Semestre || '-'}</span> <span>Grp: ${cours.Groupe || 'Tous'}</span>
+                            </div>
+                        </div>`;
+                    });
+                } else {
+                    html += `<div class="text-muted" style="font-size:0.8rem;">Libre</div>`;
+                }
+                html += `</td>`;
+            });
+            html += `</tr>`;
+        });
+        container.innerHTML = html + `</tbody></table>`;
+    }
+
+    // --- ONGLET 3 : PLANIFICATEUR ---
+    function updateFutureRoomSelect() {
+        const jour = document.getElementById('assignJour').value;
+        const heure = document.getElementById('assignHeure').value;
+        const selectSalle = document.getElementById('assignSalle');
+        
+        if (!jour || !heure) { selectSalle.disabled = true; return; }
+
+        let occupiedInFuture = futureSchedule.filter(s => s.jour === jour && s.heure === heure).map(s => s.salle.trim());
+        let freeSalles = allSalles.filter(s => !occupiedInFuture.includes(s.name));
+
+        selectSalle.disabled = false;
+        selectSalle.innerHTML = freeSalles.length > 0 
+            ? freeSalles.map(s => `<option value="${s.name}">${s.name}</option>`).join('')
+            : '<option value="" disabled>AUCUNE SALLE LIBRE</option>';
+    }
+
+    function renderFutureSchedule() {
+        const filiere = document.getElementById('viewFiliereFuture').value;
+        const container = document.getElementById('futureScheduleContainer');
+        
+        let html = `<table class="table table-bordered schedule-grid text-center align-middle mb-0" style="min-width: 800px;">
+                        <thead style="background-color: #f8fafc;"><tr><th>Jour \\ Heure</th>`;
+        allCreneaux.forEach(c => html += `<th>${c}</th>`);
+        html += `</tr></thead><tbody>`;
+
+        allJours.forEach(jour => {
+            html += `<tr><th class="bg-light">${jour}</th>`;
+            allCreneaux.forEach(creneau => {
+                let cellData = futureSchedule.filter(s => s.jour === jour && s.heure === creneau);
+                if (filiere !== 'ALL') cellData = cellData.filter(s => s.filiere === filiere);
+                
+                html += `<td class="schedule-cell p-2 align-top">`;
+                
+                // 1. Affichage des salles occupées
+                if (cellData.length > 0) {
+                    cellData.forEach(cours => {
+                        html += `
+                        <div class="schedule-card p-1 mb-1 rounded shadow-sm text-start border-start border-3 border-success bg-light">
+                            <form method="POST" action="/admin/classes" class="no-print d-inline float-end m-0 p-0">
+                                <input type="hidden" name="form_type" value="delete_affectation">
+                                <input type="hidden" name="affectation_id" value="${cours.id}">
+                                <button type="submit" style="background:none; border:none; color:red; font-size:12px; cursor:pointer;" title="Supprimer">✖</button>
+                            </form>
+                            ${filiere === 'ALL' ? `<strong style="font-size:0.75rem;">${cours.filiere}</strong><br>` : ''}
+                            <span class="badge" style="background:#10b981;">${cours.salle}</span>
+                        </div>`;
+                    });
+                } else if (filiere !== 'ALL') {
+                    html += `<div class="text-muted" style="font-size:0.8rem;">Libre</div>`;
+                }
+
+                // 2. Affichage des Salles Libres (UNIQUEMENT EN VUE GLOBALE)
+                if (filiere === 'ALL') {
+                    let occupiedInCell = cellData.map(s => s.salle.trim());
+                    let freeInCell = allSalles.filter(s => !occupiedInCell.includes(s.name));
+                    
+                    html += `<div class="free-rooms-container text-start">`;
+                    if(freeInCell.length > 0) {
+                        html += `<strong class="text-success">Salles Libres :</strong><br><span style="color:#64748b;">${freeInCell.map(s => s.name).join(', ')}</span>`;
+                    } else {
+                        html += `<strong class="text-danger">Complet (Aucune salle)</strong>`;
+                    }
+                    html += `</div>`;
+                }
+
+                html += `</td>`;
+            });
+            html += `</tr>`;
+        });
+        container.innerHTML = html + `</tbody></table>`;
+    }
+
+    // Charger automatiquement au démarrage si on est sur l'onglet 3
+    if(document.getElementById('filiere-tab').classList.contains('active')) {
+        renderFutureSchedule();
+    }
+</script>
+{% endblock %}
