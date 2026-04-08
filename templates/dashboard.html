@@ -24,19 +24,19 @@
     </div>
 
     <div class="row g-4 mb-5">
-        
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm bg-white h-100 stat-card">
+            <div class="card border-0 shadow-sm text-white h-100 stat-card card-filter bg-grad-prof" 
+                 onclick="filterByValue('{{ top_prof['Professeur'] if top_prof else '' }}')">
                 <div class="card-body p-4 position-relative overflow-hidden">
-                    <div class="icon-bg-watermark text-danger"><i class="fas fa-user-tie"></i></div>
+                    <div class="icon-bg-watermark text-white opacity-10"><i class="fas fa-user-tie"></i></div>
                     <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h6 class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">Prof le plus absent</h6>
-                        <div class="icon-circle-small bg-danger bg-opacity-10 text-danger"><i class="fas fa-exclamation-triangle"></i></div>
+                        <h6 class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">Prof le plus absent</h6>
+                        <div class="icon-circle-small bg-white bg-opacity-25"><i class="fas fa-exclamation-triangle"></i></div>
                     </div>
-                    <h4 class="fw-bold text-navy text-truncate mb-1" title="{{ top_prof['Professeur'] if top_prof else 'N/A' }}">
+                    <h4 class="fw-bold text-truncate mb-1" title="{{ top_prof['Professeur'] if top_prof else 'N/A' }}">
                         {{ top_prof['Professeur'] if top_prof else 'Aucune donnée' }}
                     </h4>
-                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1">
+                    <span class="badge bg-white bg-opacity-25 border border-white border-opacity-25 px-2 py-1">
                         {{ top_prof['c'] if top_prof else 0 }} absences cumulées
                     </span>
                 </div>
@@ -44,17 +44,18 @@
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm bg-white h-100 stat-card">
+            <div class="card border-0 shadow-sm text-white h-100 stat-card card-filter bg-grad-filiere" 
+                 onclick="filterByValue('{{ top_filiere['Filiere'] if top_filiere else '' }}')">
                 <div class="card-body p-4 position-relative overflow-hidden">
-                    <div class="icon-bg-watermark text-warning"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="icon-bg-watermark text-white opacity-10"><i class="fas fa-graduation-cap"></i></div>
                     <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h6 class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">Filière la plus impactée</h6>
-                        <div class="icon-circle-small bg-warning bg-opacity-10 text-warning"><i class="fas fa-chart-bar"></i></div>
+                        <h6 class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">Filière la plus impactée</h6>
+                        <div class="icon-circle-small bg-white bg-opacity-25"><i class="fas fa-chart-bar"></i></div>
                     </div>
-                    <h4 class="fw-bold text-navy text-truncate mb-1">
+                    <h4 class="fw-bold text-truncate mb-1">
                         {{ top_filiere['Filiere'] if top_filiere else 'Aucune donnée' }}
                     </h4>
-                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1">
+                    <span class="badge bg-white bg-opacity-25 border border-white border-opacity-25 px-2 py-1">
                         {{ top_filiere['c'] if top_filiere else 0 }} séances perdues
                     </span>
                 </div>
@@ -62,22 +63,23 @@
         </div>
 
         <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm bg-white h-100 stat-card">
+            <div class="card border-0 shadow-sm text-white h-100 stat-card card-filter bg-grad-day" 
+                 onclick="filterByDay('{{ top_day['Jour'] if top_day else '' }}')">
                 <div class="card-body p-4 position-relative overflow-hidden">
-                    <div class="icon-bg-watermark text-info"><i class="fas fa-calendar-times"></i></div>
+                    <div class="icon-bg-watermark text-white opacity-10"><i class="fas fa-calendar-times"></i></div>
                     <div class="d-flex justify-content-between align-items-start mb-3">
-                        <h6 class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">Jour le plus critique</h6>
-                        <div class="icon-circle-small bg-info bg-opacity-10 text-info"><i class="fas fa-calendar-day"></i></div>
+                        <h6 class="text-white-50 text-uppercase fw-bold" style="font-size: 0.75rem;">Jour le plus critique</h6>
+                        <div class="icon-circle-small bg-white bg-opacity-25"><i class="fas fa-calendar-day"></i></div>
                     </div>
-                    <h4 class="fw-bold text-navy mb-1">
+                    <h4 class="fw-bold mb-1">
                         {{ top_day['Jour'] if top_day else 'Aucune donnée' }}
                     </h4>
                     {% if top_day %}
-                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-2 py-1">
+                    <span class="badge bg-white bg-opacity-25 border border-white border-opacity-25 px-2 py-1">
                         {{ top_day['c'] }} absences le {{ top_day['Jour']|lower }}
                     </span>
                     {% else %}
-                    <span class="text-muted small fw-600">Données insuffisantes</span>
+                    <span class="text-white-50 small fw-600">Données insuffisantes</span>
                     {% endif %}
                 </div>
             </div>
@@ -92,7 +94,6 @@
                         <div class="icon-circle-small bg-white bg-opacity-25 text-gold"><i class="fas fa-check-double"></i></div>
                     </div>
                     <h4 class="fw-bold text-gold mb-2">{{ taux_recup }}%</h4>
-                    
                     <div class="progress mb-2" style="height: 6px; background-color: rgba(255,255,255,0.2);">
                         <div class="progress-bar bg-gold" role="progressbar" style="width: {{ taux_recup }}%;"></div>
                     </div>
@@ -103,7 +104,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <div class="card border-0 shadow-lg academic-card">
@@ -113,18 +113,15 @@
         </div>
         
         <div class="bg-light-gray px-4 py-3 border-bottom d-flex gap-3 flex-wrap align-items-center">
-            
             <div class="flex-grow-1" style="min-width: 200px;">
                 <div class="input-group input-group-sm shadow-sm rounded">
                     <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
                     <input type="text" id="filterText" class="form-control border-start-0 ps-0 fw-500" placeholder="Chercher un prof, module, filière...">
                 </div>
             </div>
-            
             <div style="width: 150px;">
                 <input type="date" id="filterDate" class="form-control form-control-sm shadow-sm text-muted fw-500" title="Filtrer par date précise">
             </div>
-            
             <div style="width: 160px;">
                 <select id="filterTime" class="form-select form-select-sm shadow-sm text-muted fw-500">
                     <option value="">Tous les créneaux</option>
@@ -133,85 +130,92 @@
                     <option value="15h00 - 18h00">15h00 - 18h00</option>
                 </select>
             </div>
-            
             <div>
-                <button id="resetFilters" class="btn btn-sm btn-outline-danger shadow-sm px-3" title="Effacer les filtres">
+                <button id="resetFilters" class="btn btn-sm btn-outline-secondary shadow-sm px-3" title="Effacer les filtres">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>
 
-        <div class="card-body p-0">
-            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                <table class="table table-hover align-middle mb-0 custom-table" id="absencesTable">
-                    <thead class="bg-white text-navy text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 10;">
-                        <tr>
-                            <th class="py-3 ps-4 border-bottom">Date</th>
-                            <th class="py-3 border-bottom">Créneau</th>
-                            <th class="py-3 border-bottom">Professeur</th>
-                            <th class="py-3 border-bottom">Salle</th>
-                            <th class="py-3 border-bottom">Classe (Filière/Sem)</th>
-                            <th class="py-3 border-bottom">Groupe</th>
-                            <th class="py-3 border-bottom">Module</th>
-                            <th class="py-3 border-bottom text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody class="border-top-0">
-                        {% for record in recent_absences %}
-                        <tr class="absence-row">
-                            <td class="ps-4 fw-bold text-dark row-date" style="font-size: 0.85rem;">{{ record.date_absent }}</td>
-                            <td class="row-time">
-                                <span class="badge time-badge"><i class="far fa-clock me-1"></i>{{ record.Lheure }}</span>
-                            </td>
-                            <td class="row-prof"><strong class="text-navy">{{ record.Professeur }}</strong></td>
-                            <td class="row-Salle"><strong class="text-navy">{{ record.Salle }}</strong></td>
-                            <td class="row-filiere">
-                                <span class="badge bg-light text-navy border px-2 py-1">
-                                    {{ record.Filiere }} {% if record.Semestre %} (S{{ record.Semestre }}) {% endif %}
-                                </span>
-                            </td>
-                            <td>
-                                {% if record.Groupe %}
-                                    <span class="text-muted" style="font-size: 0.85rem;">{{ record.Groupe }}</span>
-                                {% else %}
-                                    <span class="text-muted fst-italic opacity-50" style="font-size: 0.8rem;">-</span>
-                                {% endif %}
-                            </td>
-                            <td class="row-module">
-                                {% if record.Module %}
-                                    <span class="text-muted" style="font-size: 0.85rem;">{{ record.Module }}</span>
-                                {% else %}
-                                    <span class="text-muted fst-italic opacity-50" style="font-size: 0.8rem;">-</span>
-                                {% endif %}
-                            </td>
-                            
-                            <td class="text-center">
-                                <form action="{{ url_for('delete_absence', absence_id=record.id) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cette absence ?');">
-                                    <button type="submit" class="btn btn-delete btn-sm" title="Supprimer">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr id="noDataRow">
-                            <td colspan="7" class="text-center py-5 text-muted">
-                                <div class="opacity-50 mb-2"><i class="fas fa-clipboard-check fa-3x"></i></div>
-                                <span>Aucune absence enregistrée.</span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        
-                        <tr id="noResultRow" style="display: none;">
-                            <td colspan="7" class="text-center py-5 text-muted">
-                                <div class="opacity-25 mb-2"><i class="fas fa-search fa-3x"></i></div>
-                                <span>Aucune absence ne correspond à votre recherche.</span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+        <form id="bulkDeleteForm" action="{{ url_for('delete_multiple_absences') }}" method="POST">
+            <div id="bulkActionContainer" class="bg-danger bg-opacity-10 border-bottom border-danger px-4 py-2 d-none d-flex justify-content-between align-items-center">
+                <span class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-2"></i> <span id="selectedCount">0</span> absence(s) sélectionnée(s)</span>
+                <button type="submit" class="btn btn-sm btn-danger fw-bold shadow-sm" onclick="return confirm('Attention, vous allez supprimer définitivement les absences sélectionnées. Continuer ?');">
+                    <i class="fas fa-trash-alt me-1"></i> Supprimer la sélection
+                </button>
             </div>
-        </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0 custom-table" id="absencesTable">
+                        <thead class="bg-white text-navy text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 10;">
+                            <tr>
+                                <th class="py-3 ps-3 border-bottom" style="width: 40px;">
+                                    <input class="form-check-input shadow-sm" type="checkbox" id="selectAllCheckbox">
+                                </th>
+                                <th class="py-3 border-bottom">Date</th>
+                                <th class="py-3 border-bottom">Créneau</th>
+                                <th class="py-3 border-bottom">Professeur</th>
+                                <th class="py-3 border-bottom">Salle</th>
+                                <th class="py-3 border-bottom">Classe (Filière/Sem)</th>
+                                <th class="py-3 border-bottom">Groupe</th>
+                                <th class="py-3 border-bottom">Module</th>
+                            </tr>
+                        </thead>
+                        <tbody class="border-top-0">
+                            {% for record in recent_absences %}
+                            <tr class="absence-row" data-day-name="{{ record.date_absent | get_day_name }}">
+                                <td class="ps-3">
+                                    <input class="form-check-input row-checkbox shadow-sm" type="checkbox" name="absence_ids" value="{{ record.id }}">
+                                </td>
+                                <td class="fw-bold text-dark row-date" style="font-size: 0.85rem;">{{ record.date_absent }}</td>
+                                <td class="row-time">
+                                    <span class="badge time-badge"><i class="far fa-clock me-1"></i>{{ record.Lheure }}</span>
+                                </td>
+                                <td class="row-prof"><strong class="text-navy">{{ record.Professeur }}</strong></td>
+                                <td class="row-Salle">
+                                    <span class="badge bg-light text-dark border px-2 py-1">
+                                    <i class="fas fa-map-marker-alt me-1 text-primary"></i> {{ record.Salle }}</span> 
+                                </td>
+                                <td class="row-filiere">
+                                    <span class="badge bg-light text-navy border px-2 py-1">
+                                        {{ record.Filiere }} {% if record.Semestre %} (S{{ record.Semestre }}) {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if record.Groupe %}
+                                        <span class="text-muted" style="font-size: 0.85rem;">{{ record.Groupe }}</span>
+                                    {% else %}
+                                        <span class="text-muted fst-italic opacity-50" style="font-size: 0.8rem;">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="row-module">
+                                    {% if record.Module %}
+                                        <span class="text-muted" style="font-size: 0.85rem;">{{ record.Module }}</span>
+                                    {% else %}
+                                        <span class="text-muted fst-italic opacity-50" style="font-size: 0.8rem;">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr id="noDataRow">
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <div class="opacity-50 mb-2"><i class="fas fa-clipboard-check fa-3x"></i></div>
+                                    <span>Aucune absence enregistrée.</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            <tr id="noResultRow" style="display: none;">
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <div class="opacity-25 mb-2"><i class="fas fa-search fa-3x"></i></div>
+                                    <span>Aucune absence ne correspond à votre recherche.</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -224,8 +228,16 @@
         --border-color: #e2e8f0;
     }
 
+    /* Styles pour les Gradients des Cartes */
+    .bg-grad-prof { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+    .bg-grad-filiere { background: linear-gradient(135deg, #f39c12 0%, #d35400 100%); }
+    .bg-grad-day { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
+
+    /* Effet au survol des cartes filtres */
+    .card-filter { cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .card-filter:hover { transform: translateY(-8px); box-shadow: 0 12px 20px rgba(0,0,0,0.2) !important; }
+
     body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; }
-    
     .academic-title { font-family: 'Playfair Display', serif; font-weight: 700; letter-spacing: -0.5px; }
     .tracking-wide { letter-spacing: 1.5px; font-weight: 600; font-size: 0.75rem; }
     .fw-500 { font-weight: 500; }
@@ -237,9 +249,7 @@
     .bg-light-gray { background-color: var(--light-gray); }
 
     .academic-card { border-radius: 12px; overflow: hidden; }
-    
     .stat-card { border-radius: 16px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 15px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1) !important; }
     
     .icon-circle-small { width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
     .icon-bg-watermark { position: absolute; right: -15px; bottom: -20px; font-size: 100px; opacity: 0.04; transform: rotate(-15deg); pointer-events: none; }
@@ -250,32 +260,30 @@
     .btn-outline-navy { color: var(--navy); border: 1px solid #cbd5e1; background: white; font-weight: 500; transition: all 0.3s ease; }
     .btn-outline-navy:hover { background: var(--light-gray); border-color: var(--navy); color: var(--navy); }
 
-    .btn-delete { color: #ef4444; background-color: rgba(239, 68, 68, 0.1); border: none; border-radius: 6px; transition: all 0.2s; }
-    .btn-delete:hover { background-color: #ef4444; color: white; }
-
     .custom-table > :not(caption) > * > * { border-bottom-color: var(--border-color); padding: 1rem 0.5rem; }
     .custom-table tbody tr:hover { background-color: rgba(0, 33, 71, 0.02); }
     
     .time-badge { background-color: rgba(0, 33, 71, 0.05); color: var(--navy); border: 1px solid rgba(0, 33, 71, 0.1); font-weight: 600; letter-spacing: 0.5px; padding: 5px 8px; }
     
-    /* Input custom styling for filters */
     .input-group-text { border-color: #dee2e6; }
     .form-control:focus, .form-select:focus { border-color: var(--navy); box-shadow: 0 0 0 0.25rem rgba(0, 33, 71, 0.1); }
 </style>
 
 <script>
+    // Variable pour le filtre par jour
+    let activeDayFilter = null;
+
     document.addEventListener('DOMContentLoaded', function() {
         const filterText = document.getElementById('filterText');
         const filterDate = document.getElementById('filterDate');
         const filterTime = document.getElementById('filterTime');
         const resetBtn = document.getElementById('resetFilters');
-        
         const rows = document.querySelectorAll('.absence-row');
         const noResultRow = document.getElementById('noResultRow');
 
         function applyFilters() {
             const textVal = filterText.value.toLowerCase().trim();
-            const dateVal = filterDate.value; // YYYY-MM-DD
+            const dateVal = filterDate.value; 
             const timeVal = filterTime.value;
             
             let visibleCount = 0;
@@ -286,39 +294,89 @@
                 const rowFiliere = row.querySelector('.row-filiere').textContent.toLowerCase();
                 const rowModule = row.querySelector('.row-module').textContent.toLowerCase();
                 const rowTime = row.querySelector('.row-time').textContent.trim();
+                const rowDayName = row.getAttribute('data-day-name') ? row.getAttribute('data-day-name').toLowerCase() : "";
 
-                // On vérifie si la ligne correspond à chacun des 3 filtres
                 let matchesText = (textVal === "") || rowProf.includes(textVal) || rowFiliere.includes(textVal) || rowModule.includes(textVal);
                 let matchesDate = (dateVal === "") || (rowDate === dateVal);
                 let matchesTime = (timeVal === "") || rowTime.includes(timeVal);
+                let matchesDay = (activeDayFilter === null) || (rowDayName === activeDayFilter.toLowerCase());
 
-                if (matchesText && matchesDate && matchesTime) {
+                if (matchesText && matchesDate && matchesTime && matchesDay) {
                     row.style.display = '';
                     visibleCount++;
                 } else {
                     row.style.display = 'none';
+                    row.querySelector('.row-checkbox').checked = false;
                 }
             });
 
-            // Gérer l'affichage du message "Aucun résultat"
             if (visibleCount === 0 && rows.length > 0) {
                 noResultRow.style.display = '';
             } else {
                 noResultRow.style.display = 'none';
             }
+            updateActionMenu();
         }
 
-        // Écouter les événements de frappe clavier et de sélection
+        // --- Fonctions de filtrage par carte ---
+        window.filterByValue = function(val) {
+            if(!val) return;
+            filterText.value = val;
+            activeDayFilter = null; // Reset jour si on filtre par texte
+            applyFilters();
+            filterText.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        window.filterByDay = function(day) {
+            if(!day) return;
+            activeDayFilter = day;
+            filterText.value = ""; // Clear texte pour voir toutes les absences du jour J
+            applyFilters();
+            filterText.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
         filterText.addEventListener('input', applyFilters);
         filterDate.addEventListener('change', applyFilters);
         filterTime.addEventListener('change', applyFilters);
 
-        // Réinitialiser les filtres
         resetBtn.addEventListener('click', () => {
-            filterText.value = '';
-            filterDate.value = '';
-            filterTime.value = '';
+            filterText.value = ''; filterDate.value = ''; filterTime.value = '';
+            activeDayFilter = null;
             applyFilters();
+        });
+
+        // --- GESTION DE LA SÉLECTION MULTIPLE ---
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+        const actionContainer = document.getElementById('bulkActionContainer');
+        const countSpan = document.getElementById('selectedCount');
+
+        function updateActionMenu() {
+            let count = 0;
+            rowCheckboxes.forEach(cb => {
+                if (cb.checked && cb.closest('tr').style.display !== 'none') count++;
+            });
+            countSpan.textContent = count;
+            if (count > 0) {
+                actionContainer.classList.remove('d-none');
+            } else {
+                actionContainer.classList.add('d-none');
+                selectAllCheckbox.checked = false;
+            }
+        }
+
+        selectAllCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            rowCheckboxes.forEach(cb => {
+                if (cb.closest('tr').style.display !== 'none') {
+                    cb.checked = isChecked;
+                }
+            });
+            updateActionMenu();
+        });
+
+        rowCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateActionMenu);
         });
     });
 </script>

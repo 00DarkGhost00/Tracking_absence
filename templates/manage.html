@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+
 {% block content %}
 <div class="container-fluid py-4">
     <div class="mb-4">
@@ -52,7 +53,7 @@
         </div>
     </div>
 
-    <div class="card shadow-sm border-0 mb-5">
+    <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white border-bottom py-3">
             <h5 class="fw-bold text-navy mb-0"><i class="fas fa-database me-2"></i>Sauvegarde & Restauration</h5>
         </div>
@@ -75,6 +76,24 @@
                             <button class="btn btn-secondary fw-bold" type="submit">Restaurer</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-5">
+        <div class="card-header bg-white border-bottom py-3">
+            <h5 class="fw-bold text-navy mb-0"><i class="fas fa-user-shield me-2"></i>Contrôle des Accès</h5>
+        </div>
+        <div class="card-body p-4 bg-light">
+            <div class="d-flex align-items-center justify-content-between bg-white p-3 rounded border shadow-sm">
+                <div>
+                    <h6 class="fw-bold mb-1">Visibilité du bouton Export Excel</h6>
+                    <p class="text-muted small mb-0">Si activé, les utilisateurs avec le rôle <strong>'compta'</strong> pourront exporter les rapports détaillés des professeurs.</p>
+                </div>
+                <div class="form-check form-switch fs-4 mb-0">
+                    <input class="form-check-input" type="checkbox" id="toggleExport" 
+                           {% if export_status == 'visible' %}checked{% endif %} style="cursor: pointer;">
                 </div>
             </div>
         </div>
@@ -108,4 +127,36 @@
     .btn-outline-navy { color: #002b5e; border: 1px solid #002b5e; background-color: transparent; }
     .btn-outline-navy:hover { background-color: #002b5e; color: #ffffff; }
 </style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const toggleExportBtn = document.getElementById('toggleExport');
+        
+        if (toggleExportBtn) {
+            toggleExportBtn.addEventListener('change', function() {
+                // Changez l'URL si le nom de votre route est différent
+                fetch("{{ url_for('toggle_export_status') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Le changement a bien été enregistré en base de données
+                        console.log("Statut de l'export mis à jour : " + data.new_status);
+                    } else {
+                        alert("Erreur lors de la modification des autorisations.");
+                        // Annule le changement visuel en cas d'erreur
+                        this.checked = !this.checked; 
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    alert("Erreur de connexion avec le serveur.");
+                    this.checked = !this.checked; 
+                });
+            });
+        }
+    });
+</script>
 {% endblock %}

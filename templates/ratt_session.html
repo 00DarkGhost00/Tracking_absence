@@ -78,7 +78,7 @@
                                     </select>
                                 </div>
                                 <small class="text-muted mt-2 d-block" style="font-size: 0.75rem;">
-                                    <i class="fas fa-info-circle me-1"></i> Propose automatiquement la salle habituelle du module ou les salles vides.
+                                    <i class="fas fa-info-circle me-1"></i> Propose automatiquement les salles vides.
                                 </small>
                             </div>
 
@@ -199,18 +199,18 @@
                 }
 
                 // Salles Habituelles
-                if (usual.length > 0) {
-                    let optGroup = document.createElement('optgroup');
-                    optGroup.label = "📌 Salles Habituelles du Module";
-                    usual.forEach(room => {
-                        let opt = document.createElement('option');
-                        opt.value = room;
-                        let isFree = available.includes(room);
-                        opt.textContent = room + (isFree ? " (Libre actuellement)" : " (Occupée par son propre cours)");
-                        optGroup.appendChild(opt);
-                    });
-                    salleSelect.appendChild(optGroup);
-                }
+                //if (usual.length > 0) {
+                  //  let optGroup = document.createElement('optgroup');
+                    //optGroup.label = "📌 Salles Habituelles du Module";
+                    //usual.forEach(room => {
+                      //  let opt = document.createElement('option');
+                        //opt.value = room;
+                        //let isFree = available.includes(room);
+                        //opt.textContent = room + (isFree ? " (Libre actuellement)" : " (Occupée par son propre cours)");
+                        //optGroup.appendChild(opt);
+                    //});
+                    //salleSelect.appendChild(optGroup);
+                //}
 
                 // Salles Libres
                 let freeRooms = available.filter(r => !usual.includes(r));
